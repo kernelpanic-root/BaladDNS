@@ -2,7 +2,6 @@ package com.eyalm.adns.ui.screens.providerLogin
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -11,7 +10,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -24,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.eyalm.adns.data.network.NextDnsProfile
 import com.eyalm.adns.ui.components.OnboardingTemplate
+import com.eyalm.adns.ui.components.ProfilesList
 import com.eyalm.adns.ui.components.StandardBottomBar
 
 @Composable
@@ -34,14 +33,15 @@ fun ProfileOptionPage(
     createProfile: (name: String) -> Unit
 ) {
     
-    var selectedProfile by remember { mutableStateOf(profiles[0]) }
     val openCreateProfileDialog = remember { mutableStateOf(false) }
+    var selectedProfile by remember { mutableStateOf(profiles[0]) }
 
     when {
         openCreateProfileDialog.value -> {
             CreateProfileDialog(
                 onDismissRequest = { openCreateProfileDialog.value = false },
                 onConfirmation = { name ->
+                    openCreateProfileDialog.value = false
                     createProfile(name)
                 }
             )
@@ -65,28 +65,16 @@ fun ProfileOptionPage(
                     .padding(paddingValues)
                     .padding(horizontal = 16.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text("Choose your profile.")
+                ProfilesList(
+                    profiles = profiles,
+                    selectedProfile = selectedProfile,
+                    onProfileSelected = { selectedProfile = it },
+                    onCreateProfileClick = { openCreateProfileDialog.value = true }
+                )
 
-                profiles.forEach { profile ->
-                    Row(
-                    ) {
-                        RadioButton(
-                            selected = profile == selectedProfile,
-                            onClick = { selectedProfile = profile }
-                        )
-                        Text(profile.name)
-                    }
-                }
-
-                Row() {
-                    TextButton(
-                        onClick = { openCreateProfileDialog.value = true }
-                    ) {
-                        Text("Create New Profile")
-                    }
-                }
             }
         }
     )
