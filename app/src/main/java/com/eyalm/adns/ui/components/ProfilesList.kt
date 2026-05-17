@@ -1,6 +1,8 @@
 package com.eyalm.adns.ui.components
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -12,31 +14,31 @@ import com.eyalm.adns.data.network.NextDnsProfile
 @Composable
 fun ProfilesList(
     profiles: List<NextDnsProfile>,
-    selectedProfile: NextDnsProfile,
+    selectedProfile: NextDnsProfile?,
     onProfileSelected: (NextDnsProfile) -> Unit,
     onCreateProfileClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-
-    profiles.forEach { profile ->
-        Row(
-        ) {
-            RadioButton(
-                selected = profile == selectedProfile,
-                onClick = { onProfileSelected(profile) }
-            )
-            Text(
-                text = profile.name,
-                modifier = Modifier.align(Alignment.CenterVertically)
-            )
+    Column(modifier = modifier) {
+        profiles.forEach { profile ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(
+                    selected = profile == selectedProfile,
+                    onClick = { onProfileSelected(profile) }
+                )
+                Text(
+                    text = profile.name
+                )
+            }
         }
-    }
 
-    Row() {
         TextButton(
             onClick = onCreateProfileClick
         ) {
             Text("Create New Profile")
         }
     }
-
 }

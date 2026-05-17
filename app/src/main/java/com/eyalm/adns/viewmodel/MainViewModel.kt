@@ -37,6 +37,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     var dnsStats by mutableStateOf<NextDnsAnalytics?>(null)
         private set
 
+
     val dnsUrlFlow: StateFlow<String> = repository.getDnsUrlFlow()
         .stateIn(
             scope = viewModelScope,

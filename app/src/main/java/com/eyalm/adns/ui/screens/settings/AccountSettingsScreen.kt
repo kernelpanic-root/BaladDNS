@@ -1,11 +1,15 @@
 package com.eyalm.adns.ui.screens.settings
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -26,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.data.models.DnsProvider
+import com.eyalm.adns.data.network.NextDnsProfile
+import com.eyalm.adns.ui.components.ProfilesList
 import com.eyalm.adns.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -36,11 +42,14 @@ fun AccountSettingsScreen(
 ) {
     val viewModel: SettingsViewModel = viewModel()
     var email by remember { mutableStateOf<String?>(null) }
+    var profiles by remember { mutableStateOf<List<NextDnsProfile>?>(null) }
 
 
     LaunchedEffect(Unit) {
         viewModel.getBlocklists()
         email = viewModel.getEmail()
+        profiles = viewModel.getProfiles()
+        Log.d("test", profiles.toString())
     }
 
 
@@ -93,7 +102,22 @@ fun AccountSettingsScreen(
                     Text("Logout")
                 }
             }
-
+            profiles?.let { currentProfiles ->
+                item {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        ProfilesList(
+                            profiles = currentProfiles,
+                            selectedProfile = currentProfiles.firstOrNull(),
+                            onProfileSelected = { }, // TODO add functionality
+                            onCreateProfileClick = { },
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                }
+            }
 
         }
     }

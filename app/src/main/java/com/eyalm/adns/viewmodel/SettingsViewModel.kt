@@ -14,6 +14,7 @@ import com.eyalm.adns.data.ApiRepository
 import com.eyalm.adns.data.Blocklist
 import com.eyalm.adns.data.DnsRepository
 import com.eyalm.adns.data.models.DnsProvider
+import com.eyalm.adns.data.network.NextDnsProfile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -122,6 +123,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             apiRepository.removeNextDnsBlocklists(blocklistId)
         }
+    }
+
+    suspend fun getProfiles(): List<NextDnsProfile> {
+        return apiRepository.getNextDnsProfiles()
     }
 
 }
