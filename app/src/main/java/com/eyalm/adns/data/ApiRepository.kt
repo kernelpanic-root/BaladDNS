@@ -183,10 +183,10 @@ class ApiRepository(context: Context) {
                 val isEnabled = privacyResponse.data.blocklists.contains(blocklist)
                 blocklists.add(
                     Blocklist(
-                        id = blocklist.id,
-                        name = blocklist.name,
+                        id =  blocklist.id,
+                        name = if (blocklist.id == "nextdns-recommended") "NextDNS Ads & Trackers Blocklist" else blocklist.name,
                         website = blocklist.website,
-                        description = blocklist.description,
+                        description = if (blocklist.id == "nextdns-recommended") "A comprehensive blocklist to block ads & trackers in all countries. This is the recommended starter blocklist." else blocklist.description,
                         entries = blocklist.entries,
                         updatedOn = blocklist.updatedOn,
                         isEnabled = isEnabled

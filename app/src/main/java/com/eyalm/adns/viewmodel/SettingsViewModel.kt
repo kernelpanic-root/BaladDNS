@@ -24,7 +24,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     enum class Page {
         MAIN,
         PROVIDERS,
-        ACCOUNT_SETTINGS
+        ACCOUNT_SETTINGS,
+        BLOCKLISTS
     }
 
     private val repository = DnsRepository(application)

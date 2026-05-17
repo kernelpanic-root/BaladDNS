@@ -31,6 +31,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.BroadcastOnPersonal
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.SettingsSuggest
 import androidx.compose.material3.AlertDialog
@@ -69,6 +70,7 @@ import com.eyalm.adns.data.DnsConstants
 import com.eyalm.adns.data.models.DnsProvider
 import com.eyalm.adns.ui.components.ClickableCardSettings
 import com.eyalm.adns.ui.screens.settings.AccountSettingsScreen
+import com.eyalm.adns.ui.screens.settings.BlocklistsScreen
 import com.eyalm.adns.ui.screens.settings.ProvidersScreen
 import com.eyalm.adns.ui.theme.AdnsTheme
 import com.eyalm.adns.viewmodel.SettingsViewModel
@@ -139,6 +141,12 @@ class SettingsActivity : ComponentActivity() {
                             provider = viewModel.selectedProvider.collectAsState().value
                         )
                     }
+                    Page.BLOCKLISTS -> {
+                        BlocklistsScreen(
+                            onBack = { viewModel.setPage(Page.MAIN) },
+                            provider = viewModel.selectedProvider.collectAsState().value
+                        )
+                    }
                 }
             }
         }
@@ -199,6 +207,17 @@ fun Greeting2(
                             onPageChange(Page.ACCOUNT_SETTINGS)
                         },
                         icon = Icons.Filled.AccountCircle
+                    )
+                }
+                item {
+                    ClickableCardSettings(
+                        title = "${provider.collectAsState().value.name} Blocklists",
+                        description = "Change blocklists for ${provider.collectAsState().value.name}",
+                        onClick = {
+                            onPageChange(Page.BLOCKLISTS)
+                        },
+                        icon = Icons.Filled.FilterList
+
                     )
                 }
             }
