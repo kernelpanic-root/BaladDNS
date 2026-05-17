@@ -4,7 +4,11 @@ import android.app.Application
 import android.app.StatusBarManager
 import android.content.ComponentName
 import android.widget.Toast
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.eyalm.adns.R
 import com.eyalm.adns.data.ApiRepository
 import com.eyalm.adns.data.Blocklist
@@ -13,6 +17,7 @@ import com.eyalm.adns.data.models.DnsProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -95,12 +100,27 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         _page.value = page
     }
 
-    suspend fun getBlocklists(): List<Blocklist> {
-        return apiRepository.getNextDnsBlocklists()
+    var blocklists: List<Blocklist>? by mutableStateOf(null)
+
+
+    fun getBlocklists() {
+        viewModelScope.launch {
+            val blocklistsResponse = apiRepository.getNextDnsBlocklists()
+            blocklists = blocklistsResponse
+        }
     }
 
-    suspend fun updateBlocklists(blocklistId: String) {
-        apiRepository.updateNextDnsBlocklists(blocklistId)
+
+    fun updateBlocklists(blocklistId: String) {
+        viewModelScope.launch {
+            apiRepository.updateNextDnsBlocklists(blocklistId)
+        }
+    }
+
+    fun removeBlocklists(blocklistId: String) {
+        viewModelScope.launch {
+            apiRepository.removeNextDnsBlocklists(blocklistId)
+        }
     }
 
 }

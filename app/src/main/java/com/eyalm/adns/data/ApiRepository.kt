@@ -217,13 +217,41 @@ class ApiRepository(context: Context) {
 
 
         try {
-            ApiClient.nextDnsApi.updateBlocklists(cookie, profileId,
+            ApiClient.nextDnsApi.addBlocklist(cookie, profileId,
                 NextDnsUpdateBlocklistsRequest(blocklistId))
             Log.d("ApiRepository", "Blocklist updated successfully: $blocklistId")
 
 
         } catch (e: Exception) {
             Log.e("ApiRepository", "Error updating blocklists", e)
+            throw e
+        }
+
+    }
+
+
+    suspend fun removeNextDnsBlocklists(blocklistId: String) {
+
+        val cookie = getNextDnsCookie()
+        if (!isLoggedIn(DnsProviders.NEXTDNS) || cookie == null) {
+            Log.e("ApiRepository", "No cookie found. User must login first.")
+            throw IllegalStateException("User must login first")
+        }
+
+        val profileId = getCurrentNextDnsProfileId()
+        if (profileId == null) {
+            Log.e("ApiRepository", "No profile ID found. User must select a profile first.")
+            throw IllegalStateException("User must select a profile first")
+        }
+
+
+        try {
+            ApiClient.nextDnsApi.removeBlocklist(cookie, profileId, blocklistId)
+            Log.d("ApiRepository", "Blocklist removed successfully: $blocklistId")
+
+
+        } catch (e: Exception) {
+            Log.e("ApiRepository", "Error removing blocklists", e)
             throw e
         }
 

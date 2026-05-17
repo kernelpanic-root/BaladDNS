@@ -2,6 +2,7 @@ package com.eyalm.adns.data.network
 
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
@@ -45,10 +46,17 @@ interface NextDnsApi {
     ): NextDnsPrivacyResponse
 
     @POST("profiles/{profileId}/privacy/blocklists")
-    suspend fun updateBlocklists(
+    suspend fun addBlocklist(
         @Header("Cookie") cookie: String,
         @Path("profileId") profileId: String,
         @Body body: NextDnsUpdateBlocklistsRequest
+    ): Response<Unit>
+
+    @DELETE("profiles/{profileId}/privacy/blocklists/{blocklistId}")
+    suspend fun removeBlocklist(
+        @Header("Cookie") cookie: String,
+        @Path("profileId") profileId: String,
+        @Path("blocklistId") blocklistId: String
     ): Response<Unit>
 
 }

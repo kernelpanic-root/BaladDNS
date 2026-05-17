@@ -20,17 +20,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.eyalm.adns.data.Blocklist
 import com.eyalm.adns.data.models.DnsProvider
 import com.eyalm.adns.ui.components.SelectableCard
 import com.eyalm.adns.viewmodel.SettingsViewModel
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -40,12 +37,12 @@ fun AccountSettingsScreen(
 ) {
     val viewModel: SettingsViewModel = viewModel()
     var email by remember { mutableStateOf<String?>(null) }
-    var blocklists by remember { mutableStateOf<List<Blocklist>>(emptyList()) }
-    val coroutineScope = rememberCoroutineScope()
+    val blocklists = viewModel.blocklists ?: emptyList()
+
 
     LaunchedEffect(Unit) {
+        viewModel.getBlocklists()
         email = viewModel.getEmail()
-        blocklists = viewModel.getBlocklists()
     }
 
 
@@ -106,12 +103,15 @@ fun AccountSettingsScreen(
                         description = Blocklist.description.toString(),
                         selected = Blocklist.isEnabled,
                         onClick = {
-                            if (!Blocklist.isEnabled) {
-                                coroutineScope.launch {
+                            when {
+                                Blocklist.isEnabled -> {
+                                    viewModel.removeBlocklists(Blocklist.id)
+                                }
+                                else -> {
                                     viewModel.updateBlocklists(Blocklist.id)
-                                    blocklists = viewModel.getBlocklists()
                                 }
                             }
+                            viewModel.getBlocklists()
                         }
                     )
                 }
