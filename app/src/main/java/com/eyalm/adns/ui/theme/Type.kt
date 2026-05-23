@@ -32,3 +32,14 @@ val Typography = Typography(
     )
     */
 )
+val Typography.pageTitle: TextStyle
+    get() = this.headlineMedium.copy(
+        fontSize = 32.sp,
+        fontWeight = FontWeight.Bold
+    )
+
+val Typography.settingsLabel: TextStyle
+    get() = this.labelMedium.copy(
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 1.2.sp
+    )
