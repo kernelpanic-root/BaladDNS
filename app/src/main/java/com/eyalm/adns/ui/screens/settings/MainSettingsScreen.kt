@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.BroadcastOnPersonal
 import androidx.compose.material.icons.filled.FamilyRestroom
 import androidx.compose.material.icons.filled.FilterList
@@ -52,6 +53,7 @@ import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.BuildConfig
 import com.eyalm.adns.R
+import com.eyalm.adns.data.DenyList
 import com.eyalm.adns.data.models.DnsProviders
 import com.eyalm.adns.ui.components.ExpressiveListItem
 import com.eyalm.adns.ui.theme.pageTitle
@@ -79,6 +81,7 @@ fun MainSettingsScreen(
     val onProvidersClick = remember(onPageChange) { { onPageChange(Page.PROVIDERS) } }
     val onSecurityClick = remember(onPageChange) { { onPageChange(Page.SECURITY) } }
     val onPrivacyClick = remember(onPageChange) { { onPageChange(Page.PRIVACY) } }
+    val onDenylistClick = remember(onPageChange) {  { viewModel.openListScreen(DenyList.lists.first()) } }
     val onParentalControlClick = remember(onPageChange) { { onPageChange(Page.PARENTAL_CONTROL) } }
     val onSettingsPageClick = remember(onPageChange) { { onPageChange(Page.SETTINGS_PAGE) } }
     val onNotificationsClick = remember(permissionLauncher) {
@@ -204,6 +207,13 @@ fun MainSettingsScreen(
                             description = "SafeSearch, blocked apps, categories",
                             onClick = onParentalControlClick,
                             icon = Icons.Filled.FamilyRestroom,
+                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        )
+                        ExpressiveListItem(
+                            title = "Denylist",
+                            description = "Add specific domain to the denylist.",
+                            onClick = onDenylistClick,
+                            icon = Icons.Filled.Block,
                             secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         )
                         ExpressiveListItem(

@@ -12,6 +12,7 @@ import com.eyalm.adns.data.network.NextDnsLoginRequest
 import com.eyalm.adns.data.network.NextDnsProfile
 import com.eyalm.adns.data.network.NextDnsStatsGraphResponse
 import com.eyalm.adns.data.network.toHexId
+import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -240,6 +241,18 @@ class ApiRepository(private val context: Context) {
         } catch (e: Exception) {
             e("ApiRepository", "Error removing $itemId from $page/$feat", e)
             false
+        }
+    }
+
+    suspend fun getCustomListItems(page: String): JsonArray? {
+        return try {
+            val profileId = requireAuth()
+            val response = ApiClient.nextDnsApi.getPageSettings(profileId, page)
+
+            response.getAsJsonArray("data")
+        } catch (e: Exception) {
+            Log.e("ApiRepository", "Error fetching custom list $page", e)
+            null
         }
     }
 

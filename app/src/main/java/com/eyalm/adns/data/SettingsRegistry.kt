@@ -53,6 +53,8 @@ data class ToggleSetting(
     }
 }
 
+
+
 sealed class ListIcon {
     data class Url(val url: String) : ListIcon()
     data class Vector(val imageVector: ImageVector) : ListIcon()
@@ -80,11 +82,13 @@ data class ListSetting(
     val localeKey: String,       // Key in merged.json
     val source: ListSource,      // Where available items come from
     val localePath: List<String>, // Path in merged.json for locale-sourced lists
-    val parentPage: Page         // Which page to go back to
+    val parentPage: Page? = null,       // Which page to go back to
+    val customTitle: String? = null,
+    val allowsCustomInput: Boolean = false
 ) {
     enum class Page { SECURITY, PRIVACY, PARENTAL_CONTROL }
 
-    fun title(): String = Locales.getString(localeCategory, localeKey, "name")
+    fun title(): String = customTitle ?: Locales.getString(localeCategory, localeKey, "name")
     fun description(): String = Locales.getString(localeCategory, localeKey, "description")
 
 }
@@ -241,4 +245,35 @@ object SettingsPageSettings {
     )
 
     val lists = emptyList<ListSetting>()
+}
+
+object DenyList {
+    val toggles = emptyList<ToggleSetting>()
+    val lists = listOf(
+        ListSetting(
+            apiPage = "denylist",
+            apiFeat = "",
+            localeCategory = "pages",
+            localeKey = "denylist",
+            source = ListSource.SERVER,
+            localePath = emptyList(),
+            customTitle = "Denylist",
+            allowsCustomInput = true
+        )
+    )
+}
+
+object Allowlist {
+    val toggles = emptyList<ToggleSetting>()
+    val lists = listOf(
+        ListSetting(
+            apiPage = "allowlist",
+            apiFeat = "",
+            localeCategory = "pages",
+            localeKey = "allowlist",
+            source = ListSource.SERVER,
+            localePath = emptyList(),
+            allowsCustomInput = true
+        )
+    )
 }

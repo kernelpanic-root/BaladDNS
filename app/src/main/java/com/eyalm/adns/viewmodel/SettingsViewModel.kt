@@ -263,6 +263,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             ListSetting.Page.SECURITY -> Page.SECURITY
             ListSetting.Page.PRIVACY -> Page.PRIVACY
             ListSetting.Page.PARENTAL_CONTROL -> Page.PARENTAL_CONTROL
+            else -> Page.MAIN
         }
         _activeListIds.value = emptySet()
         _availableItems.value = emptyList()
@@ -276,19 +277,37 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private fun loadListData(listSetting: ListSetting) {
         viewModelScope.launch {
             _isLoading.value = true
+            if (listSetting.allowsCustomInput) {
+                val dataArray = apiRepository.getCustomListItems(listSetting.apiPage)
 
-            val activeIds = apiRepository.getActiveListItems(
-                listSetting.apiPage, listSetting.apiFeat
-            )
-            _activeListIds.value = activeIds.toSet()
+                val activeIds = mutableSetOf<String>()
+                val items = mutableListOf<ListItem>()
 
-            // 2. Load available items and map to ListItem
-            val items: List<ListItem> = when (listSetting.source) {
-                ListSource.SERVER -> loadServerList(listSetting)
-                ListSource.LOCALE -> loadLocaleList(listSetting)
+                dataArray?.forEach { element ->
+                    val obj = element.asJsonObject
+                    val id = obj.get("id").asString
+                    val isActive = if (obj.has("active")) obj.get("active").asBoolean else true
+
+                    items.add(ListItem(id = id, name = "*.$id"))
+                    if (isActive) activeIds.add(id)
+                }
+
+                _activeListIds.value = activeIds
+                _availableItems.value = items
+            } else {
+
+                val activeIds = apiRepository.getActiveListItems(
+                    listSetting.apiPage, listSetting.apiFeat
+                )
+                _activeListIds.value = activeIds.toSet()
+
+                val items: List<ListItem> = when (listSetting.source) {
+                    ListSource.SERVER -> loadServerList(listSetting)
+                    ListSource.LOCALE -> loadLocaleList(listSetting)
+                }
+                _availableItems.value = items
+
             }
-            _availableItems.value = items
-
             _isLoading.value = false
         }
     }
