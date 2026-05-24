@@ -40,6 +40,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     var dnsProvider by mutableStateOf<DnsProvider?>(null)
         private set
 
+    init {
+        viewModelScope.launch {
+            repository.getDnsUrlFlow().collect {
+                val provider = repository.getSelectedProvider()
+                if (provider is DnsProvider.Enhanced) {
+                    try {
+                        getStats()
+                    } catch (e: Exception) {
+                        Log.e("MainViewModel", "Error fetching stats on URL change", e)
+                    }
+                } else {
+                    dnsStats = null
+                    dnsProvider = provider
+                }
+            }
+        }
+    }
+
 
     val dnsUrlFlow: StateFlow<String> = repository.getDnsUrlFlow()
         .stateIn(

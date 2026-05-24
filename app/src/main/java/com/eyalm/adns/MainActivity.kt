@@ -224,6 +224,7 @@ fun Greeting(
             if (!(settingsPage != SettingsViewModel.Page.MAIN && selectedItem == 2)) {
                 NavigationBar {
                     items.forEachIndexed { index, item ->
+                        if ((index == 1 && settingsViewModel.selectedProvider.collectAsState().value is DnsProvider.Enhanced) || index != 1)
                         NavigationBarItem(
                             icon = {
                                 Icon(

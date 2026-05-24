@@ -47,7 +47,7 @@ fun StatsScreen(
     val provider = viewModel.dnsProvider
     val error = remember { mutableStateOf<String?>(null) }
 
-    StatsScreenContent( // TODO: after switching to a provider, this still shows the previous stats.
+    StatsScreenContent(
         stats = stats,
         error = error.value,
         paddingValues = paddingValues,
@@ -130,13 +130,15 @@ fun StatsCards(
     stats: NextDnsAnalytics,
     provider: DnsProvider
 ) {
-    val totalQueries = stats.data[0].queries.toInt().coerceAtLeast(1)
-    val blockedQueries = stats.data[1].queries.toInt()
+    var totalQueries = 0;
+    if (stats.data.count() > 0) totalQueries = stats.data[0].queries.toInt().coerceAtLeast(1)
+    var blockedQueries = 0;
+    if (stats.data.count() > 1) blockedQueries = stats.data[1].queries.toInt()
     val percentValue = (blockedQueries.toFloat() / totalQueries * 100).toInt()
 
     StatsCard(
         modifier = Modifier,
-        bigText = stats.data[1].queries,
+        bigText = blockedQueries.toString(),
         smallText = "Blocked",
         isRed = true
     )
@@ -147,7 +149,7 @@ fun StatsCards(
     ) {
         StatsCard(
             modifier = Modifier.weight(1f),
-            bigText = stats.data[0].queries,
+            bigText = totalQueries.toString(),
             smallText = "Total"
         )
         StatsCard(
