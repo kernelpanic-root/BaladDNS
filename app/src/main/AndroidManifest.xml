@@ -21,6 +21,7 @@
         android:theme="@style/Theme.Adns">
         <activity
             android:name=".ProviderLoginActivity"
+            android:windowSoftInputMode="adjustResize"
             android:exported="false"
             android:label="@string/title_activity_provider_login"
             android:theme="@style/Theme.Adns" />
@@ -32,6 +33,7 @@
         <activity
             android:name=".OnboardingActivity"
             android:exported="false"
+            android:windowSoftInputMode="adjustResize"
             android:label="@string/title_activity_onboarding"
             android:theme="@style/Theme.Adns" />
         <activity

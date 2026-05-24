@@ -2,7 +2,9 @@ package com.eyalm.adns.ui.screens.providerLogin
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -25,12 +28,12 @@ import com.eyalm.adns.data.network.NextDnsProfile
 import com.eyalm.adns.ui.components.OnboardingTemplate
 import com.eyalm.adns.ui.components.ProfilesList
 import com.eyalm.adns.ui.components.StandardBottomBar
+import com.eyalm.adns.ui.theme.pageTitle
 
 @Composable
 fun ProfileOptionPage(
     profiles: List<NextDnsProfile>,
     onNextClick: (profile: NextDnsProfile) -> Unit,
-    onBackClick: () -> Unit,
     createProfile: (name: String) -> Unit
 ) {
     
@@ -51,7 +54,7 @@ fun ProfileOptionPage(
     }
 
     OnboardingTemplate(
-        onBackClick = onBackClick,
+        hideTopBar = true,
         bottomBarContent = {
             StandardBottomBar(
                 message = "Choose your profile.",
@@ -64,11 +67,14 @@ fun ProfileOptionPage(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(horizontal = 16.dp)
+                    .padding(start = 16.dp, end = 16.dp)
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                Spacer(Modifier.height(100.dp))
+                Text("Profile", style = MaterialTheme.typography.pageTitle)
                 Text("Choose your profile.")
+                Spacer(modifier = Modifier.height(8.dp))
                 ProfilesList(
                     profiles = profiles,
                     selectedProfile = selectedProfile,

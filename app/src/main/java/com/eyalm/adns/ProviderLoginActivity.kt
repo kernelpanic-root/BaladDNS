@@ -56,7 +56,9 @@ class ProviderLoginActivity : ComponentActivity() {
                                     viewModel.providerLogin(email, password, provider.id)
                                 }
                             },
-                            onBackClick = {}
+                            onBackClick = {
+                                finish()
+                            }
                         )
                         Step.SIGNUP -> TODO()
                         Step.LOADING -> ShizukuActivationScreen()
@@ -64,9 +66,6 @@ class ProviderLoginActivity : ComponentActivity() {
                             profiles = profiles,
                             onNextClick = { profile ->
                                 viewModel.setProfile(profile)
-                            },
-                            onBackClick = {
-
                             },
                             createProfile = { name ->
                                 lifecycleScope.launch {

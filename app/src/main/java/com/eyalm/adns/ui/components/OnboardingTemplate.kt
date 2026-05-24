@@ -1,12 +1,16 @@
 package com.eyalm.adns.ui.components
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -26,42 +30,52 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingTemplate(
+    hideTopBar: Boolean = false,
     onBackClick: (() -> Unit)? = null,
     bottomBarContent: @Composable RowScope.() -> Unit,
-    content: @Composable (PaddingValues) -> Unit
+    content: @Composable (PaddingValues) -> Unit,
 ) {
     Scaffold(
+        contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
-            TopAppBar(
-                title = { },
-                navigationIcon = {
-                    if (onBackClick != null) {
-                        IconButton(onClick = onBackClick) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+            if (!hideTopBar) {
+                TopAppBar(
+                    title = { },
+                    navigationIcon = {
+                        if (onBackClick != null) {
+                            IconButton(onClick = onBackClick) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                            }
                         }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                ),
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background
+                    ),
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+            }
         },
         bottomBar = {
-            Surface(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(128.dp),
-                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    .imePadding()
             ) {
-                Row(
+                Surface(
                     modifier = Modifier
-                        .padding(16.dp)
-                        .navigationBarsPadding(),
-                    verticalAlignment = Alignment.CenterVertically
+                        .fillMaxWidth()
+                        .height(112.dp),
+                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                 ) {
-                    bottomBarContent()
+                    Row(
+                        modifier = Modifier
+                            .navigationBarsPadding()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        bottomBarContent()
+                    }
                 }
             }
         },

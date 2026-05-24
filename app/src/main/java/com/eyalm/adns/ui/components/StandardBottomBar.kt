@@ -2,7 +2,7 @@ package com.eyalm.adns.ui.components
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -43,7 +43,7 @@ fun StandardBottomBar(
             onClick = onNextClick,
             enabled = enabled,
             shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxHeight()
+            modifier = Modifier.height(56.dp)
         ) {
             Text(
                 text = buttonText,
