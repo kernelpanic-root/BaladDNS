@@ -13,11 +13,14 @@ import com.eyalm.adns.BuildConfig
 import com.eyalm.adns.data.ApiRepository
 import com.eyalm.adns.data.DnsRepository
 import com.eyalm.adns.data.models.DnsProvider
-import com.eyalm.adns.data.network.NextDnsAnalytics
+import com.eyalm.adns.data.network.NextDnsDomainsResponse
+import com.eyalm.adns.data.network.NextDnsStatsGraphResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -34,11 +37,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val apiRepository = ApiRepository(application)
     private val sharedPrefs = application.getSharedPreferences("adns_settings", Context.MODE_PRIVATE)
 
-    var dnsStats by mutableStateOf<NextDnsAnalytics?>(null)
-        private set
+    private var _stats = MutableStateFlow<Pair<NextDnsStatsGraphResponse, NextDnsDomainsResponse>?>(null)
+    val stats: StateFlow<Pair<NextDnsStatsGraphResponse, NextDnsDomainsResponse>?> = _stats.asStateFlow()
+
 
     var dnsProvider by mutableStateOf<DnsProvider?>(null)
         private set
+
+    private val _errorMessage = MutableStateFlow("")
+    val errorMessage = _errorMessage.asStateFlow()
+
+    private val statsCache = mutableMapOf<String, Pair<NextDnsStatsGraphResponse, NextDnsDomainsResponse>>()
 
     init {
         viewModelScope.launch {
@@ -46,14 +55,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val provider = repository.getSelectedProvider()
                 if (provider is DnsProvider.Enhanced) {
                     try {
-                        getStats()
+                        statsCache.clear()
+                        listOf("-24h", "-7d", "-30d").forEach { period ->
+                            statsCache[period] = Pair(
+                                apiRepository.getNextDnsStatsGraph(period),
+                                apiRepository.getNextDnsDomains("blocked", period)
+                            )
+                        }
+
+                        _stats.value = statsCache["-30d"]
+                        Log.d("stats", "got stats")
                     } catch (e: Exception) {
                         Log.e("MainViewModel", "Error fetching stats on URL change", e)
+                        _errorMessage.value = "Cannot load stats"
                     }
                 } else {
-                    dnsStats = null
-                    dnsProvider = provider
+                    _stats.value = null
                 }
+                dnsProvider = provider
             }
         }
     }
@@ -104,22 +123,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repository.setCustomUrl(url)
     }
 
-    suspend fun getStats(): DnsProvider {
-
-        val provider = repository.getSelectedProvider()
-
-        if (provider !is DnsProvider.Enhanced) {
-            throw IllegalStateException("User must be logged in to get stats")
-        }
-
-        val stats = apiRepository.getNextDnsStats()
-
-        dnsStats = stats
-        dnsProvider = provider
-
-        return provider
-
+    fun getPeriod(period: String) {
+        _stats.value = statsCache[period]
     }
+
 
     fun checkForUpdate(onResult: (String?) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {

@@ -3,6 +3,7 @@ package com.eyalm.adns.ui.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -15,9 +16,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.eyalm.adns.data.ListIcon
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -27,6 +30,7 @@ fun ExpressiveListItem(
     altLeadingContent: (@Composable (isEnabled: Boolean) -> Unit)? = null,
     altContent: (@Composable () -> Unit)? = null,
     icon: ImageVector? = null,
+    altIconUrl: String? = null,
     secondIcon: ImageVector? = null,
     interactiveItem: (@Composable (isSelected: Boolean, onClick: () -> Unit) -> Unit)? = null,
     title: String,
@@ -58,6 +62,17 @@ fun ExpressiveListItem(
             }
             if (altLeadingContent != null) {
                 altLeadingContent(isSelected)
+            }
+            if (altIconUrl != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ListIconView(
+                        icon = ListIcon.Url(altIconUrl),
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                    )
+                    Spacer(Modifier.width(4.dp))
+                }
             }
         }
     }

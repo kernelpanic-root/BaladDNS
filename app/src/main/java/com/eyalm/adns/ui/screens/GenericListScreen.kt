@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.eyalm.adns.data.ListIcon
 import com.eyalm.adns.ui.components.ExpressiveListItem
 import com.eyalm.adns.ui.theme.pageTitle
 import com.eyalm.adns.viewmodel.SettingsViewModel
@@ -208,17 +209,11 @@ fun GenericListScreen(onBack: () -> Unit) {
                                 }
                             }
                         ) {
-
                             ExpressiveListItem(
                                 title = item.name,
                                 description = item.description,
                                 isSelected = activeIds.contains(item.id),
                                 onClick = onItemClick,
-                                /* TODO
-                                leadingIcon = {
-                                    ListIconView(icon = item.icon)
-                                }
-                                 */
                                 interactiveItem = checkboxItem,
                                 isLast = index == filteredItems.lastIndex,
                                 isFirst = index == 0,
@@ -231,11 +226,10 @@ fun GenericListScreen(onBack: () -> Unit) {
                             description = item.description,
                             isSelected = activeIds.contains(item.id),
                             onClick = onItemClick,
-                            /* TODO
-                            leadingIcon = {
-                                ListIconView(icon = item.icon)
-                            }
-                             */
+                            altIconUrl =
+                                if (item.icon is ListIcon.Url) {
+                                    item.icon.url
+                                } else null,
                             interactiveItem = checkboxItem,
                             isLast = index == filteredItems.lastIndex,
                             isFirst = index == 0,

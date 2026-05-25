@@ -128,24 +128,24 @@ class ApiRepository(private val context: Context) {
 
 
 
-    suspend fun getNextDnsStatsGraph(period: String = "-30d"): NextDnsStatsGraphResponse? {
+    suspend fun getNextDnsStatsGraph(period: String = "-30d"): NextDnsStatsGraphResponse {
         val profileId = requireAuth()
         return try {
             val tz = java.util.TimeZone.getDefault().id
             ApiClient.nextDnsApi.getStatsGraph(profileId, period, "start", tz)
         } catch (e: Exception) {
             e("ApiRepository", "Error fetching stats graph", e)
-            null
+            throw e
         }
     }
 
-    suspend fun getNextDnsDomains(status: String, period: String = "-30d", limit: Int = 6): NextDnsDomainsResponse? {
+    suspend fun getNextDnsDomains(status: String, period: String = "-30d", limit: Int = 10): NextDnsDomainsResponse {
         val profileId = requireAuth()
         return try {
             ApiClient.nextDnsApi.getDomains(profileId, status, period, limit)
         } catch (e: Exception) {
             e("ApiRepository", "Error fetching domains ($status)", e)
-            null
+            throw e
         }
     }
 

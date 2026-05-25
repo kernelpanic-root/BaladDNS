@@ -95,14 +95,6 @@ class MainActivity : ComponentActivity() {
                 settingsViewModel.profiles = settingsViewModel.getProfiles()
                 settingsViewModel.currentProfile = settingsViewModel.getCurrentProfile()
             }
-            if (viewModel.dnsStats == null) {
-                try {
-                    viewModel.getStats()
-                } catch (e: Exception) {
-                    Log.e("MainActivity", "Error getting stats", e)
-
-                }
-            }
         }
 
 
