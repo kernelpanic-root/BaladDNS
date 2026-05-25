@@ -5,6 +5,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -54,56 +64,101 @@ class ProviderLoginActivity : ComponentActivity() {
 
 
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    when (step) {
-                        Step.LOGIN -> {
-                            Login(
-                                provider = provider,
-                                onNextClick = { email, password ->
-                                    lifecycleScope.launch {
-                                        viewModel.nextStep()
-                                        viewModel.providerLogin(email, password, provider.id)
-                                    }
-                                },
-                                onBackClick = {
-                                    finish()
-                                }
+                    AnimatedContent(
+                        targetState = step,
+                        transitionSpec = {
+                            if (targetState.ordinal > initialState.ordinal) {
+                                (fadeIn(animationSpec = tween(220, delayMillis = 90)) +
+                                        scaleIn(
+                                            initialScale = 0.92f,
+                                            animationSpec = tween(300)
+                                        ) +
+                                        slideIntoContainer(
+                                            towards = AnimatedContentTransitionScope.SlideDirection.Up,
+                                            animationSpec = tween(300, easing = FastOutSlowInEasing),
+                                            initialOffset = { it / 8 }
+                                        )) togetherWith
+                                        (fadeOut(animationSpec = tween(90)) +
+                                                scaleOut(
+                                                    targetScale = 1.08f,
+                                                    animationSpec = tween(300)
+                                                ))
+                            } else {
+                                (fadeIn(animationSpec = tween(220, delayMillis = 90)) +
+                                        scaleIn(
+                                            initialScale = 1.08f,
+                                            animationSpec = tween(300)
+                                        )) togetherWith
+                                        (fadeOut(animationSpec = tween(90)) +
+                                                scaleOut(
+                                                    targetScale = 0.92f,
+                                                    animationSpec = tween(300)
+                                                ) +
+                                                slideOutOfContainer(
+                                                    towards = AnimatedContentTransitionScope.SlideDirection.Down,
+                                                    animationSpec = tween(
+                                                        300,
+                                                        easing = FastOutSlowInEasing
+                                                    ),
+                                                    targetOffset = { it / 8 }
+                                                ))
+                            }.using(
+                                SizeTransform(clip = false)
                             )
-                        }
-                        Step.LOADING -> {
-                            BackHandler {  }
-                            OnboardingTemplate(
-                                content = { },
-                                bottomBarContent = {
-                                    LinearWavyProgressIndicator(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp)
-                                    )
-                                }
-                            )
-                        }
-                        Step.PROFILE -> {
-                            BackHandler {  }
-                            ProfileOptionPage(
-                                profiles = profiles,
-                                onNextClick = { profile ->
-                                    viewModel.setProfile(profile)
-                                },
-                                createProfile = { name ->
-                                    lifecycleScope.launch {
-                                        viewModel.createProfile(name)
+                        },
+                        label = "onboarding_step_transition"
+                    ) { targetStep ->
+                        when (targetStep) {
+                            Step.LOGIN -> {
+                                Login(
+                                    provider = provider,
+                                    onNextClick = { email, password ->
+                                        lifecycleScope.launch {
+                                            viewModel.nextStep()
+                                            viewModel.providerLogin(email, password, provider.id)
+                                        }
+                                    },
+                                    onBackClick = {
+                                        finish()
                                     }
+                                )
+                            }
+                            Step.LOADING -> {
+                                BackHandler {  }
+                                OnboardingTemplate(
+                                    content = { },
+                                    bottomBarContent = {
+                                        LinearWavyProgressIndicator(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp)
+                                        )
+                                    }
+                                )
+                            }
+                            Step.PROFILE -> {
+                                BackHandler {  }
+                                ProfileOptionPage(
+                                    profiles = profiles,
+                                    onNextClick = { profile ->
+                                        viewModel.setProfile(profile)
+                                    },
+                                    createProfile = { name ->
+                                        lifecycleScope.launch {
+                                            viewModel.createProfile(name)
+                                        }
 
-                                }
-                            )
-                        }
-                        Step.SUCCESS -> {
-                            BackHandler { finish() }
-                            SuccessLoginScreen(
-                                onFinishClicked = {
-                                    finish()
-                                }
-                            )
+                                    }
+                                )
+                            }
+                            Step.SUCCESS -> {
+                                BackHandler { finish() }
+                                SuccessLoginScreen(
+                                    onFinishClicked = {
+                                        finish()
+                                    }
+                                )
+                            }
                         }
                     }
                 }
