@@ -120,6 +120,15 @@ fun MainSettingsScreen(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
                     )
+                    ExpressiveListItem(
+                        onClick = onProvidersClick,
+                        title = "Change Provider",
+                        description = "Change the provider to use",
+                        icon = Icons.Filled.BroadcastOnPersonal,
+                        secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        isFirst = true,
+                        isLast = !isNextDns
+                    )
                     if (isNextDns) {
                         ExpressiveListItem(
                             onClick = onAccountSettingsClick,
@@ -127,7 +136,7 @@ fun MainSettingsScreen(
                             secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             title = "${provider.name} Settings",
                             description = "Change account settings for ${provider.name}",
-                            isFirst = true,
+                            isLast = true,
                         )
                         /*
                         ExpressiveListItem(
@@ -139,17 +148,6 @@ fun MainSettingsScreen(
                         )
                          */
                     }
-
-                    ExpressiveListItem(
-                        onClick = onProvidersClick,
-                        title = "Change Provider",
-                        description = "Change the provider to use",
-                        icon = Icons.Filled.BroadcastOnPersonal,
-                        secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        isFirst = !isNextDns,
-                        isLast = true
-                    )
-
                 }
             }
 
