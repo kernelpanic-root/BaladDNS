@@ -232,6 +232,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 }
                 _pageToggles.value = states
                 _loadedPageId.value = page
+            } else {
+                _errorMessage.emit("Failed to load page data. Check your network connection and try again later.")
             }
             _isLoading.value = false
         }
@@ -276,39 +278,47 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private fun loadListData(listSetting: ListSetting) {
         viewModelScope.launch {
-            _isLoading.value = true
-            if (listSetting.allowsCustomInput) {
-                val dataArray = apiRepository.getCustomListItems(listSetting.apiPage)
+            try {
+                _isLoading.value = true
+                if (listSetting.allowsCustomInput) {
+                    val dataArray = apiRepository.getCustomListItems(listSetting.apiPage)
 
-                val activeIds = mutableSetOf<String>()
-                val items = mutableListOf<ListItem>()
+                    val activeIds = mutableSetOf<String>()
+                    val items = mutableListOf<ListItem>()
 
-                dataArray?.forEach { element ->
-                    val obj = element.asJsonObject
-                    val id = obj.get("id").asString
-                    val isActive = if (obj.has("active")) obj.get("active").asBoolean else true
+                    dataArray?.forEach { element ->
+                        val obj = element.asJsonObject
+                        val id = obj.get("id").asString
+                        val isActive = if (obj.has("active")) obj.get("active").asBoolean else true
 
-                    items.add(ListItem(id = id, name = "*.$id"))
-                    if (isActive) activeIds.add(id)
+                        items.add(ListItem(id = id, name = "*.$id"))
+                        if (isActive) activeIds.add(id)
+                    }
+
+                    _activeListIds.value = activeIds
+                    _availableItems.value = items
+                } else {
+
+                    val activeIds = apiRepository.getActiveListItems(
+                        listSetting.apiPage, listSetting.apiFeat
+                    )
+                    _activeListIds.value = activeIds.toSet()
+
+                    val items: List<ListItem> = when (listSetting.source) {
+                        ListSource.SERVER -> loadServerList(listSetting)
+                        ListSource.LOCALE -> loadLocaleList(listSetting)
+                    }
+                    _availableItems.value = items
+                    if (_activeListIds.value.isEmpty()) {
+                        _errorMessage.emit("Failed to load list data.")
+                    }
                 }
+                _isLoading.value = false
 
-                _activeListIds.value = activeIds
-                _availableItems.value = items
-            } else {
-
-                val activeIds = apiRepository.getActiveListItems(
-                    listSetting.apiPage, listSetting.apiFeat
-                )
-                _activeListIds.value = activeIds.toSet()
-
-                val items: List<ListItem> = when (listSetting.source) {
-                    ListSource.SERVER -> loadServerList(listSetting)
-                    ListSource.LOCALE -> loadLocaleList(listSetting)
-                }
-                _availableItems.value = items
-
+            } catch (e: Exception) {
+                _errorMessage.emit("Failed to load list data. Check your network connection and try again later.")
+                _isLoading.value = false
             }
-            _isLoading.value = false
         }
     }
 
