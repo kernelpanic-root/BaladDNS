@@ -13,6 +13,17 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -221,7 +232,11 @@ fun Greeting(
 
     Scaffold(
         bottomBar = {
-            if (!(settingsPage != SettingsViewModel.Page.MAIN && selectedItem == 2)) {
+            AnimatedVisibility(
+                visible = !(settingsPage != SettingsViewModel.Page.MAIN && selectedItem == 2),
+                enter = androidx.compose.animation.slideInVertically { it } + fadeIn(),
+                exit = androidx.compose.animation.slideOutVertically { it } + fadeOut()
+            ) {
                 NavigationBar {
                     items.forEachIndexed { index, item ->
                         if ((index == 1 && settingsViewModel.selectedProvider.collectAsState().value is DnsProvider.Enhanced) || index != 1)
@@ -244,37 +259,55 @@ fun Greeting(
 
         },
         contentWindowInsets = WindowInsets(0)
-    ) {
-        innerPadding ->
+    ) { innerPadding ->
+        AnimatedContent(
+            targetState = selectedItem,
+            transitionSpec = {
+                ((fadeIn(animationSpec = tween(220, delayMillis = 80)) +
+                        scaleIn(
+                            initialScale = 0.93f,
+                            animationSpec = tween(300, easing = LinearOutSlowInEasing)
+                        )) togetherWith
+                        (fadeOut(animationSpec = tween(120)) +
+                                scaleOut(
+                                    targetScale = 1.07f,
+                                    animationSpec = tween(300, easing = FastOutSlowInEasing)
+                                )))
+                    .using(SizeTransform(clip = false))
+            },
+            label = "MainContentTransition"
+        ) { targetIndex ->
+            when (targetIndex) {
+                0 -> {
+                    HomeScreen(
+                        isEnabled = isEnabled,
+                        runningTime = runningTime,
+                        onToggle = onToggle,
+                        server = server,
+                        onEditClick = {
+                            selectedItem = 2
+                            onEditClick()
+                        },
+                        innerPadding = innerPadding,
+                        onSettingsClick = {
+                            selectedItem = 2
+                        }
+                    )
 
-        when (selectedItem) {
-            0 -> {
-                HomeScreen(
-                    isEnabled = isEnabled,
-                    runningTime = runningTime,
-                    onToggle = onToggle,
-                    server = server,
-                    onEditClick = {
-                        selectedItem = 2
-                        onEditClick()
-                    },
-                    innerPadding = innerPadding,
-                    onSettingsClick = {
-                        selectedItem = 2
-                    }
+                }
+
+                1 -> StatsScreen(
+                    innerPadding
                 )
 
-            }
-            1 -> StatsScreen(
-                innerPadding
-            )
-            2 -> {
-                SettingsTabRouter(
-                    modifier = Modifier.padding(innerPadding),
-                    onNavigateToProvidersActivity = onNavigateToProviders,
-                    permissionLauncher = permissionLauncher,
-                    innerPadding = innerPadding
-                )
+                2 -> {
+                    SettingsTabRouter(
+                        modifier = Modifier.padding(innerPadding),
+                        onNavigateToProvidersActivity = onNavigateToProviders,
+                        permissionLauncher = permissionLauncher,
+                        innerPadding = innerPadding
+                    )
+                }
             }
         }
 

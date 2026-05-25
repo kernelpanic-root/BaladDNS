@@ -113,6 +113,7 @@ fun ProvidersScreen(
                             } else {
                                 if (viewModel.isLoggedIn(provider)) {
                                     viewModel.setProvider(provider.id)
+                                    isCustomSelected = false
                                 }
                                 else if (provider.id != currentProvider.id) {
                                     onEnhancedModeClick(provider.id)
@@ -123,9 +124,11 @@ fun ProvidersScreen(
                             RadioButton(provider.id == currentProvider.id && !isCustomSelected, {
                                 if (!provider.isEnhanced) {
                                     viewModel.setProvider(provider.id)
+                                    isCustomSelected = false
                                 } else {
                                     if (viewModel.isLoggedIn(provider)) {
                                         viewModel.setProvider(provider.id)
+                                        isCustomSelected = false
                                     }
                                     else if (provider.id != currentProvider.id) {
                                         onEnhancedModeClick(provider.id)

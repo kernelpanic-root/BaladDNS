@@ -18,7 +18,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ContainedLoadingIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -121,7 +121,7 @@ fun GenericListScreen(onBack: () -> Unit) {
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
-                ContainedLoadingIndicator(modifier = Modifier.size(64.dp))
+                CircularWavyProgressIndicator(modifier = Modifier.size(64.dp))
             }
         } else {
             val filteredItems = remember(searchQuery, availableItems) {
