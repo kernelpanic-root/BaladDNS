@@ -1,23 +1,20 @@
 # ADNS
 
-![Version](https://img.shields.io/github/v/release/eyalm2000/adns?label=Version)
-![IzzyOnDroid downloads](https://img.shields.io/badge/dynamic/json?url=https://dlstats.izzyondroid.org/iod-stats-collector/stats/basic/yearly/rolling.json&query=$.[%27com.eyalm.adns%27]&label=IzzyOnDroid%20downloads)
-![GitHub downloads](https://img.shields.io/github/downloads/eyalm2000/adns/total?label=GitHub%20downloads&color=blue)
+ADNS is a lightweight DNS-based ad blocker for Android. No VPN, no background services, no battery drain, no hassle. NextDNS integration is built in for a seamless experience.
 
-ADNS is a lightweight DNS-based ad blocker for Android. No VPN, no background services, no battery drain, no hassle.
-
-Download it from [GitHub Releases](https://github.com/eyalm2000/adns/releases) or [IzzyOnDroid](https://apt.izzysoft.de/fdroid/index/apk/com.eyalm.adns).
+Download it from [GitHub Releases](https://github.com/eyalm2000/adns/releases).
 
 ## Features
 
 Android makes DNS controls hard to find and slow to toggle. ADNS makes it fast and accessible.
 
 - Toggle DNS on/off with a single tap
-- Use your own DNS server
+- Use your NextDNS account and edit its settings directly within the app,
+- or use public servers like AdGuard, Cloudflare, or any other hostname
 - Quick Settings tile for instant access
 - State notification for at-a-glance status
   
-Beautifully crafted with Material You and Jetpack Compose.
+Beautifully crafted with Material 3 Expressive and Jetpack Compose.
 
 ## Activation
 
@@ -31,6 +28,7 @@ You can grant access using:
 <br>
 <br>
 <p align="center">
-  <img src="assets/homescreen.png" alt="ADNS main screen" width="33%">
-  <img src="assets/settings.png" alt="ADNS settings screen" width="33%">
+    <img src="fastlane\metadata\android\en-US\images\phoneScreenshots\3.png" alt="ADNS main screen" width="33%">
+    <img src="fastlane\metadata\android\en-US\images\phoneScreenshots\2.png" alt="ADNS settings screen" width="33%">
+    <img src="fastlane\metadata\android\en-US\images\phoneScreenshots\1.png" alt="ADNS settings screen" width="33%">
 </p>

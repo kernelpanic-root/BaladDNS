@@ -1,9 +1,8 @@
-ADNS is a lightweight DNS-based ad blocker for Android. No VPN, no background services, no battery drain, no hassle.
-
-Android makes DNS controls hard to find and slow to toggle. ADNS makes it fast and accessible.
+ADNS is a lightweight DNS-based ad blocker for Android. No VPN, no background services, no battery drain, no hassle. NextDNS integration is built in for a seamless experience.
 
 - Toggle DNS on/off with a single tap
-- Use your own DNS server
+- Use your NextDNS account and edit its settings directly within the app,
+- or use public servers like AdGuard, Cloudflare, or any other hostname
 - Quick Settings tile for instant access
 - State notification for at-a-glance status
 

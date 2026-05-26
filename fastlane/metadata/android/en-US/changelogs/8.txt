@@ -1,0 +1,5 @@
+- Complete NextDNS Account Integration, covering everything from settings to statistics. 
+- Added support for easy switching between non-account providers (like Google or AdGuard) directly from Settings.
+- Major UI refresh with Material 3 Expressive design and improved animations.
+- A new bottom navigation for clearer structure.
+- Enhanced and more polished onboarding experience.
