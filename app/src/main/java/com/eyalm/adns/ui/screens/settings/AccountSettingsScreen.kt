@@ -3,6 +3,7 @@ package com.eyalm.adns.ui.screens.settings
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,8 +12,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -23,6 +26,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -36,10 +40,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.data.models.DnsProvider
+import com.eyalm.adns.ui.components.ExpressiveIcon
 import com.eyalm.adns.ui.components.ProfilesList
 import com.eyalm.adns.ui.screens.providerLogin.CreateProfileDialog
 import com.eyalm.adns.ui.theme.pageTitle
@@ -55,6 +62,14 @@ fun AccountSettingsScreen(
     val email = viewModel.email
     var selectedProfile by remember { mutableStateOf(viewModel.currentProfile) }
     var openCreateProfileDialog by remember { mutableStateOf(false) }
+    var deviceName by remember { mutableStateOf(viewModel.nextDnsDeviceName) }
+    val isDeviceNameValid = remember(deviceName) {
+        deviceName.all { it.isDigit() || it in 'a'..'z' || it in 'A'..'Z' || it == ' ' }
+    }
+
+    LaunchedEffect(viewModel.nextDnsDeviceName) {
+        deviceName = viewModel.nextDnsDeviceName
+    }
 
 
     LaunchedEffect(Unit) {
@@ -134,13 +149,50 @@ fun AccountSettingsScreen(
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
                             )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                            OutlinedTextField(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(64.dp),
+                                value = deviceName,
+                                onValueChange = { deviceName = it },
+                                label = { Text("Device Name (for Logs)") },
+                                isError = !isDeviceNameValid,
+                                trailingIcon = {
+                                    IconButton(
+                                        onClick = {
+                                            if (isDeviceNameValid) {
+                                                viewModel.updateDeviceName(deviceName)
+                                            }
+                                        },
+                                        enabled = isDeviceNameValid && deviceName != viewModel.nextDnsDeviceName
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Done,
+                                            contentDescription = "Save Device Name",
+                                            tint = if (isDeviceNameValid && deviceName != viewModel.nextDnsDeviceName)
+                                                MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                        )
+                                    }
+                                },
+                                placeholder = { Text("Device Name is not set") },
+                                shape = RoundedCornerShape(12.dp),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Text,
+                                    imeAction = ImeAction.Done
+                                ),
+                            )
                             Spacer(modifier = Modifier.height(16.dp))
                             Button(
                                 onClick = {
                                     viewModel.logout()
-                                    Log.d("logout", "loggedout")
                                 },
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
                                     contentColor = MaterialTheme.colorScheme.error

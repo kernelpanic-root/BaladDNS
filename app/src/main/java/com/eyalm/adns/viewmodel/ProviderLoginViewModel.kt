@@ -69,8 +69,7 @@ class ProviderLoginViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun setProfile(profile: NextDnsProfile) {
-        apiRepository.setNextDnsProfile(profile)
-        Log.d("ProviderLoginViewModel", "Profile set: ${profile.name} (${profile.id})")
+        apiRepository.setNextDnsProfile(profile, "ADNS")
         currentStep = ProviderLoginActivity.Step.SUCCESS
     }
 

@@ -1,5 +1,6 @@
 package com.eyalm.adns.data
 
+import android.R.attr.name
 import android.content.Context
 import android.util.Log
 import android.util.Log.e
@@ -88,11 +89,14 @@ class ApiRepository(private val context: Context) {
     }
 
     fun getCurrentNextDnsProfileId(): String? {
-        val url = sharedPrefs.getString("enhanced_url", null)
-        if (url != null) {
-            return url.substringBefore(".dns.nextdns.io")
+        return sharedPrefs.getString("enhanced_url", null)?.let { url ->
+            val cleanUrl = url.removeSuffix(".dns.nextdns.io")
+            if (cleanUrl.contains("-")) {
+                cleanUrl.substringAfterLast('-')
+            } else {
+                cleanUrl
+            }
         }
-        return null
     }
 
     suspend fun getNextDnsStats(): NextDnsAnalytics? {
@@ -123,8 +127,35 @@ class ApiRepository(private val context: Context) {
         }
     }
 
-    fun setNextDnsProfile(profile: NextDnsProfile) {
-        repository.setProvider(DnsProviders.NEXTDNS.id, profile.id + ".dns.nextdns.io")
+    fun setNextDnsProfile(profile: NextDnsProfile, deviceName: String? = null) {
+        val sanitizedName = deviceName?.replace(" ", "--")
+        val url = if (sanitizedName.isNullOrEmpty()) {
+            "${profile.id}.dns.nextdns.io"
+        } else {
+            "$sanitizedName-${profile.id}.dns.nextdns.io"
+        }
+        repository.setProvider(DnsProviders.NEXTDNS.id, url)
+    }
+
+    fun setNextDnsDeviceName(deviceName: String) {
+        val profileId = getCurrentNextDnsProfileId() ?: return
+        val sanitizedName = deviceName.trim().replace(" ", "--")
+        val url = if (sanitizedName.isEmpty()) {
+            "$profileId.dns.nextdns.io"
+        } else {
+            "$sanitizedName-$profileId.dns.nextdns.io"
+        }
+        repository.setProvider(DnsProviders.NEXTDNS.id, url)
+    }
+
+    fun getNextDnsDeviceName(): String {
+        val url = sharedPrefs.getString("enhanced_url", "") ?: ""
+        val cleanUrl = url.removeSuffix(".dns.nextdns.io")
+        return if (cleanUrl.contains("-")) {
+            cleanUrl.substringBeforeLast("-").replace("--", " ")
+        } else {
+            ""
+        }
     }
 
     suspend fun createNextDnsProfile(name: String) {

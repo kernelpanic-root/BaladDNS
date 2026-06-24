@@ -152,6 +152,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     var profiles by mutableStateOf<List<NextDnsProfile>?>(null)
     var email by mutableStateOf<String?>(null)
     var currentProfile by mutableStateOf<NextDnsProfile?>(null)
+    var nextDnsDeviceName by mutableStateOf(apiRepository.getNextDnsDeviceName())
+        private set
 
 
     suspend fun getProfiles(): List<NextDnsProfile> {
@@ -165,7 +167,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun setProfile(profile: NextDnsProfile) {
-        apiRepository.setNextDnsProfile(profile)
+        val currentName = apiRepository.getNextDnsDeviceName()
+        val nameToSet = currentName.ifEmpty { "ADNS" }
+        apiRepository.setNextDnsProfile(profile, nameToSet)
+        nextDnsDeviceName = apiRepository.getNextDnsDeviceName()
+    }
+
+    fun updateDeviceName(name: String) {
+        apiRepository.setNextDnsDeviceName(name)
+        nextDnsDeviceName = apiRepository.getNextDnsDeviceName()
+        Toast.makeText(getApplication(), "Done!", Toast.LENGTH_SHORT).show()
     }
 
     fun createProfile(name: String) {
