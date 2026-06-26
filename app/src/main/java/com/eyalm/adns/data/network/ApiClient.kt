@@ -23,7 +23,13 @@ object ApiClient {
 
         tokenManager = TokenManager(context.applicationContext)
 
+        val dispatcher = okhttp3.Dispatcher().apply {
+            maxRequests = 30
+            maxRequestsPerHost = 15
+        }
+
         val okHttpClient = OkHttpClient.Builder()
+            .dispatcher(dispatcher)
             .addInterceptor { chain ->
                 val originalRequest = chain.request()
                 val path = originalRequest.url.encodedPath

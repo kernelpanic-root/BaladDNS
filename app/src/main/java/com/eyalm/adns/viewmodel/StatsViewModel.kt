@@ -16,11 +16,10 @@ import com.eyalm.adns.data.models.DnsProvider
 import com.eyalm.adns.data.network.NextDnsStatsGraphResponse
 import com.eyalm.adns.data.parseList
 import com.eyalm.adns.data.parsePercent
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 sealed class CardState {
@@ -119,24 +118,31 @@ class StatsViewModel(application: Application) : AndroidViewModel(application) {
         loadedPeriod = period
         cardCache[period]?.let { _states.value = it; return }
 
-        _states.value = StatsRegistry.cards.associate { it.key to CardState.Loading }
+        val initialStates = StatsRegistry.cards.associate { it.key to CardState.Loading }
+        _states.value = initialStates
 
         viewModelScope.launch {
-            val results = StatsRegistry.cards.map { card ->
-                async {
+            StatsRegistry.cards.forEach { card ->
+                launch {
                     val params = card.params + ("from" to period)
                     val data = api.getAnalytics(card.feature, params)
-                    card.key to when {
+                    val cardState = when {
                         data == null        -> CardState.Error
                         card is ListCard    -> CardState.ListData(parseList(card, data))
                         card is PercentCard -> CardState.PercentData(parsePercent(card, data))
                         else                -> CardState.Error
                     }
+                    if (loadedPeriod == period) {
+                        _states.update { current ->
+                            current + (card.key to cardState)
+                        }
+                    }
+                    synchronized(cardCache) {
+                        val currentCache = cardCache[period] ?: initialStates
+                        cardCache[period] = currentCache + (card.key to cardState)
+                    }
                 }
-            }.awaitAll().toMap()
-
-            cardCache[period] = results
-            if (loadedPeriod == period) _states.value = results
+            }
         }
     }
 }
