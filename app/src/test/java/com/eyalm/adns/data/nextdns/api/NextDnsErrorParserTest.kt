@@ -1,6 +1,7 @@
 package com.eyalm.adns.data.nextdns.api
 
 import com.eyalm.adns.domain.nextdns.ApiProblem
+import com.eyalm.adns.data.nextdns.nextDnsFixture
 import com.google.gson.JsonParser
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -11,14 +12,7 @@ class NextDnsErrorParserTest {
     @Test
     fun `parses array errors and source pointer`() {
         val body = JsonParser.parseString(
-            """
-            {
-              "errors": [
-                { "code": "invalid", "source": { "pointer": "name" } },
-                { "code": "conflict" }
-              ]
-            }
-            """.trimIndent()
+            nextDnsFixture("errors/array.json")
         ).asJsonObject
 
         assertEquals(
@@ -33,14 +27,7 @@ class NextDnsErrorParserTest {
     @Test
     fun `parses field map errors`() {
         val body = JsonParser.parseString(
-            """
-            {
-              "errors": {
-                "email": "taken",
-                "currentPassword": "incorrect"
-              }
-            }
-            """.trimIndent()
+            nextDnsFixture("errors/field-map.json")
         ).asJsonObject
 
         assertEquals(

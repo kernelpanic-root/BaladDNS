@@ -1,8 +1,7 @@
 package com.eyalm.adns.data.nextdns.resources
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Shield
 import com.eyalm.adns.data.Locales
+import com.eyalm.adns.data.nextdns.model.BuiltInListIcon
 import com.eyalm.adns.data.nextdns.model.ListIcon
 import com.eyalm.adns.data.nextdns.model.nextDnsFaviconUrl
 import com.google.gson.JsonArray
@@ -75,7 +74,7 @@ fun mapServerResourceItems(
             name = objectValue.stringOrNull("name") ?: id,
             description = objectValue.stringOrNull("description"),
             website = objectValue.stringOrNull("website"),
-            icon = ListIcon.Vector(Icons.Default.Shield),
+            icon = ListIcon.BuiltIn(BuiltInListIcon.Shield),
             sourceIndex = index,
         )
     }

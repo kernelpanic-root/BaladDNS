@@ -50,8 +50,8 @@ import com.eyalm.adns.data.nextdns.recreation.RecreationScheduleValidation
 import com.eyalm.adns.data.nextdns.recreation.RecreationTimeDraft
 import com.eyalm.adns.ui.components.ExpressiveListItem
 import com.eyalm.adns.ui.components.dialogs.BaseDialog
-import com.eyalm.adns.viewmodel.RecreationUiState
-import com.eyalm.adns.viewmodel.RecreationViewModel
+import com.eyalm.adns.viewmodel.nextdns.RecreationUiState
+import com.eyalm.adns.viewmodel.nextdns.RecreationViewModel
 import java.util.Locale
 
 @Composable
@@ -63,8 +63,8 @@ fun RecreationSection(
     val viewModel: RecreationViewModel = viewModel(key = "recreation-$profileId")
     val state by viewModel.state.collectAsState()
 
-    LaunchedEffect(profileId, refreshRevision) {
-        viewModel.load()
+    LaunchedEffect(profileId, refreshRevision, canEdit) {
+        viewModel.load(profileId, canEdit)
     }
 
     ExpressiveListItem(

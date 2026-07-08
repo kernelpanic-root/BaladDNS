@@ -9,7 +9,6 @@ import androidx.compose.ui.res.stringResource
 import com.eyalm.adns.R
 import com.eyalm.adns.data.LocaleHelper
 import com.eyalm.adns.ui.components.ExpressiveListItem
-import com.eyalm.adns.ui.screens.SettingsCategoryScreenTemplate
 
 // TODO: Move to a dynamic approach
 

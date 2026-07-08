@@ -1,6 +1,7 @@
 package com.eyalm.adns.data.nextdns.api
 
 import com.eyalm.adns.domain.nextdns.ApiResult
+import com.eyalm.adns.data.nextdns.nextDnsFixture
 import com.google.gson.JsonParser
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -11,7 +12,7 @@ class NextDnsResponseMapperTest {
     @Test
     fun `successful http response with errors body remains a failure`() {
         val body = JsonParser.parseString(
-            """{"errors":[{"code":"duplicate"}]}"""
+            nextDnsFixture("errors/duplicate.json")
         ).asJsonObject
 
         val result = Response.success(body).toJsonApiResult()

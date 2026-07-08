@@ -1,0 +1,13 @@
+{
+  "errors": [
+    {
+      "code": "invalid",
+      "source": {
+        "pointer": "name"
+      }
+    },
+    {
+      "code": "conflict"
+    }
+  ]
+}

@@ -12,13 +12,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.eyalm.adns.data.ListCard
+import com.eyalm.adns.data.nextdns.analytics.ListCard
+import com.eyalm.adns.data.nextdns.analytics.PercentCard
+import com.eyalm.adns.data.nextdns.analytics.StatRow
+import com.eyalm.adns.data.nextdns.analytics.fmtPercent
 import com.eyalm.adns.data.nextdns.model.ListIcon
-import com.eyalm.adns.data.PercentCard
-import com.eyalm.adns.data.StatRow
-import com.eyalm.adns.data.fmtPercent
 import com.eyalm.adns.ui.screens.HighlightedDomainText
-import com.eyalm.adns.viewmodel.CardState
+import com.eyalm.adns.viewmodel.nextdns.CardState
 
 @Composable
 private fun StatCardShell(

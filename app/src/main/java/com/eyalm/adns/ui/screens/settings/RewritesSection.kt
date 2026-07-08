@@ -32,8 +32,8 @@ import com.eyalm.adns.data.nextdns.rewrites.RewriteError
 import com.eyalm.adns.data.nextdns.rewrites.RewriteField
 import com.eyalm.adns.ui.components.ExpressiveListItem
 import com.eyalm.adns.ui.components.dialogs.BaseDialog
-import com.eyalm.adns.viewmodel.RewritesUiState
-import com.eyalm.adns.viewmodel.RewritesViewModel
+import com.eyalm.adns.viewmodel.nextdns.RewritesUiState
+import com.eyalm.adns.viewmodel.nextdns.RewritesViewModel
 
 @Composable
 fun RewritesSection(
@@ -44,8 +44,8 @@ fun RewritesSection(
     val viewModel: RewritesViewModel = viewModel(key = "rewrites-$profileId")
     val state by viewModel.state.collectAsState()
 
-    LaunchedEffect(profileId, refreshRevision) {
-        viewModel.load()
+    LaunchedEffect(profileId, refreshRevision, canEdit) {
+        viewModel.load(profileId, canEdit)
     }
 
     ExpressiveListItem(

@@ -1,32 +1,33 @@
 package com.eyalm.adns.data.nextdns.resources
 
 import com.eyalm.adns.data.network.ApiClient
+import com.eyalm.adns.data.nextdns.api.NextDnsApi
+import com.eyalm.adns.data.nextdns.api.nextDnsApiCall
 import com.eyalm.adns.data.nextdns.api.toJsonApiResult
 import com.eyalm.adns.data.nextdns.model.ListIcon
 import com.eyalm.adns.data.nextdns.model.nextDnsFaviconUrl
 import com.eyalm.adns.domain.nextdns.ApiResult
-import java.io.IOException
-import kotlinx.coroutines.CancellationException
 
 data class CustomResourceList(
     val activeIds: Set<String>,
     val items: List<NextDnsResourceItem>,
 )
 
-class NextDnsResourceRepository {
+class NextDnsResourceRepository(
+    private val api: NextDnsApi = ApiClient.nextDnsApi,
+) {
     suspend fun getActiveIds(
         profileId: String,
         page: String,
         feature: String,
-    ): ApiResult<Set<String>> = apiCall {
+    ): ApiResult<Set<String>> = nextDnsApiCall {
         when (
-            val result = ApiClient.nextDnsApi
-                .getActiveListItems(profileId, page, feature)
+            val result = api.getActiveListItems(profileId, page, feature)
                 .toJsonApiResult()
         ) {
             is ApiResult.Success -> {
                 val data = result.value.getAsJsonArray("data")
-                    ?: return@apiCall ApiResult.SerializationFailure(
+                    ?: return@nextDnsApiCall ApiResult.SerializationFailure(
                         IllegalStateException("Missing active resource data")
                     )
                 ApiResult.Success(
@@ -50,15 +51,14 @@ class NextDnsResourceRepository {
     suspend fun getServerCatalog(
         page: String,
         feature: String,
-    ): ApiResult<List<NextDnsResourceItem>> = apiCall {
+    ): ApiResult<List<NextDnsResourceItem>> = nextDnsApiCall {
         when (
-            val result = ApiClient.nextDnsApi
-                .getAvailableCatalog(page, feature)
+            val result = api.getAvailableCatalog(page, feature)
                 .toJsonApiResult()
         ) {
             is ApiResult.Success -> {
                 val data = result.value.getAsJsonArray("data")
-                    ?: return@apiCall ApiResult.SerializationFailure(
+                    ?: return@nextDnsApiCall ApiResult.SerializationFailure(
                         IllegalStateException("Missing resource catalog data")
                     )
                 ApiResult.Success(
@@ -76,15 +76,14 @@ class NextDnsResourceRepository {
     suspend fun getCustomList(
         profileId: String,
         page: String,
-    ): ApiResult<CustomResourceList> = apiCall {
+    ): ApiResult<CustomResourceList> = nextDnsApiCall {
         when (
-            val result = ApiClient.nextDnsApi
-                .getPageSettings(profileId, page)
+            val result = api.getPageSettings(profileId, page)
                 .toJsonApiResult()
         ) {
             is ApiResult.Success -> {
                 val data = result.value.getAsJsonArray("data")
-                    ?: return@apiCall ApiResult.SerializationFailure(
+                    ?: return@nextDnsApiCall ApiResult.SerializationFailure(
                         IllegalStateException("Missing custom list data")
                     )
                 val activeIds = mutableSetOf<String>()
@@ -120,15 +119,4 @@ class NextDnsResourceRepository {
         }
     }
 
-    private suspend inline fun <T> apiCall(
-        block: () -> ApiResult<T>,
-    ): ApiResult<T> = try {
-        block()
-    } catch (error: CancellationException) {
-        throw error
-    } catch (error: IOException) {
-        ApiResult.NetworkFailure(error)
-    } catch (error: Exception) {
-        ApiResult.SerializationFailure(error)
-    }
 }

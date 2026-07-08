@@ -51,8 +51,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.data.models.DnsProvider
 import com.eyalm.adns.data.Locales
-import com.eyalm.adns.ui.components.ExpressiveIcon
-import com.eyalm.adns.ui.components.AdnsPullToRefresh
+import com.eyalm.adns.ui.components.refresh.AdnsPullToRefresh
 import com.eyalm.adns.ui.components.ProfilesList
 import com.eyalm.adns.ui.screens.providerLogin.CreateProfileDialog
 import com.eyalm.adns.ui.theme.pageTitle

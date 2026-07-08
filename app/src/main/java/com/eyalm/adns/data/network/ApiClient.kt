@@ -2,6 +2,13 @@ package com.eyalm.adns.data.network
 
 import android.content.Context
 import com.eyalm.adns.data.TokenManager
+import com.eyalm.adns.data.nextdns.api.NextDnsApi
+import com.eyalm.adns.data.nextdns.api.NextDnsApiKeyAuthApi
+import com.eyalm.adns.data.nextdns.api.NextDnsApiKeyInterceptor
+import com.eyalm.adns.data.nextdns.api.NextDnsCookieAuthApi
+import com.eyalm.adns.data.nextdns.api.NextDnsIpv4Api
+import com.eyalm.adns.data.nextdns.api.NextDnsLinkIpApi
+import com.eyalm.adns.data.nextdns.api.NextDnsSessionExpiryInterceptor
 import com.eyalm.adns.data.nextdns.auth.NextDnsSessionManager
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit

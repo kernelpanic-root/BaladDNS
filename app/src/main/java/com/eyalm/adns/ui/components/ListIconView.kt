@@ -9,7 +9,24 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Casino
+import androidx.compose.material.icons.filled.Computer
+import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.SignalCellularAlt
+import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material.icons.filled.Speaker
+import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
+import com.eyalm.adns.data.nextdns.model.BuiltInListIcon
 import com.eyalm.adns.data.nextdns.model.ListIcon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -50,9 +68,9 @@ fun ListIconView(
         contentAlignment = Alignment.Center
     ) {
         when (icon) {
-            is ListIcon.Vector -> {
+            is ListIcon.BuiltIn -> {
                 Icon(
-                    imageVector = icon.imageVector,
+                    imageVector = icon.key.imageVector,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxSize(0.6f)
@@ -106,10 +124,31 @@ fun rememberAsyncImage(url: String): ImageBitmap? {
                         imageBitmap = bitmap
                     }
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
+            } catch (_: Exception) {
+
             }
         }
     }
     return imageBitmap
 }
+
+private val BuiltInListIcon.imageVector
+    get() = when (this) {
+        BuiltInListIcon.Shield -> Icons.Default.Shield
+        BuiltInListIcon.Computer -> Icons.Default.Computer
+        BuiltInListIcon.Smartphone -> Icons.Default.Smartphone
+        BuiltInListIcon.Speaker -> Icons.Default.Speaker
+        BuiltInListIcon.Devices -> Icons.Default.Devices
+        BuiltInListIcon.Block -> Icons.Default.Block
+        BuiltInListIcon.Favorite -> Icons.Default.Favorite
+        BuiltInListIcon.People -> Icons.Default.People
+        BuiltInListIcon.PlayCircle -> Icons.Default.PlayCircle
+        BuiltInListIcon.SportsEsports -> Icons.Default.SportsEsports
+        BuiltInListIcon.Casino -> Icons.Default.Casino
+        BuiltInListIcon.ShoppingBag -> Icons.Default.ShoppingBag
+        BuiltInListIcon.Chat -> Icons.AutoMirrored.Filled.Chat
+        BuiltInListIcon.MusicNote -> Icons.Default.MusicNote
+        BuiltInListIcon.Folder -> Icons.Default.Folder
+        BuiltInListIcon.SignalCellular -> Icons.Default.SignalCellularAlt
+        BuiltInListIcon.Wifi -> Icons.Default.Wifi
+    }

@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "email": "taken",
+    "currentPassword": "incorrect"
+  }
+}

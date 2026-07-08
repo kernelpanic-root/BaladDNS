@@ -1,6 +1,6 @@
 package com.eyalm.adns.data.nextdns.auth
 
-import com.eyalm.adns.data.network.NextDnsProfile
+import com.eyalm.adns.data.nextdns.api.NextDnsProfile
 
 enum class NextDnsLoginMode {
     Password,

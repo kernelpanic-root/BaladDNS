@@ -27,7 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.eyalm.adns.data.network.NextDnsProfile
+import com.eyalm.adns.data.nextdns.api.NextDnsProfile
 import com.eyalm.adns.ui.components.OnboardingTemplate
 import com.eyalm.adns.ui.components.ProfilesList
 import com.eyalm.adns.ui.components.StandardBottomBar
@@ -102,7 +102,7 @@ fun CreateProfileDialog(
 
     AlertDialog(
         icon = {
-            Icon(Icons.Default.Add, contentDescription = "Add Icon")
+            Icon(Icons.Default.Add, contentDescription = null)
         },
         title = {
             Text(text = stringResource(R.string.create_profile))

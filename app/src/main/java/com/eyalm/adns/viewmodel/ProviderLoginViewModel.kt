@@ -8,8 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.eyalm.adns.ProviderLoginActivity
-import com.eyalm.adns.data.ApiRepository
-import com.eyalm.adns.data.network.NextDnsProfile
+import com.eyalm.adns.data.nextdns.api.NextDnsProfile
 import com.eyalm.adns.data.nextdns.auth.NextDnsAuthRepository
 import com.eyalm.adns.data.nextdns.auth.NextDnsLoginFailure
 import com.eyalm.adns.data.nextdns.auth.NextDnsLoginField
@@ -18,13 +17,15 @@ import com.eyalm.adns.data.nextdns.auth.NextDnsLoginOutcome
 import com.eyalm.adns.data.nextdns.auth.NextDnsLoginUiState
 import com.eyalm.adns.data.nextdns.auth.fieldErrors
 import com.eyalm.adns.data.nextdns.auth.isValidTwoFactorCode
+import com.eyalm.adns.data.nextdns.profile.NextDnsProfileRepository
+import com.eyalm.adns.domain.nextdns.ApiResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ProviderLoginViewModel(application: Application) : AndroidViewModel(application) {
-    private val apiRepository = ApiRepository(application)
+    private val profileRepository = NextDnsProfileRepository(application)
     private val authRepository = NextDnsAuthRepository(application)
 
     var currentStep by mutableStateOf(ProviderLoginActivity.Step.LOGIN)
@@ -184,14 +185,16 @@ class ProviderLoginViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun setProfile(profile: NextDnsProfile) {
-        apiRepository.setNextDnsProfile(profile, "ADNS")
+        profileRepository.selectProfile(profile, "ADNS")
         currentStep = ProviderLoginActivity.Step.SUCCESS
     }
 
     fun createProfile(name: String) {
         viewModelScope.launch {
-            apiRepository.createNextDnsProfile(name)
-            profiles = apiRepository.getNextDnsProfiles()
+            when (val result = profileRepository.createProfile(name)) {
+                is ApiResult.Success -> profiles = profiles + result.value
+                else -> Unit
+            }
         }
     }
 

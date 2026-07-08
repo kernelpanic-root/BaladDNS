@@ -28,10 +28,10 @@ class SetupMappingTest {
             """.trimIndent(),
         ).asJsonObject
 
-        val result = root.toSetupLoad("efccb3")
+        val result = root.toSetupLoad("def456")
 
-        assertEquals("efccb3.dns.nextdns.io", result.content.dnsOverTls)
-        assertEquals("https://dns.nextdns.io/efccb3", result.content.dnsOverHttps)
+        assertEquals("def456.dns.nextdns.io", result.content.dnsOverTls)
+        assertEquals("https://dns.nextdns.io/def456", result.content.dnsOverHttps)
         assertEquals("sdns://synthetic", result.content.dnscryptStamp)
         assertEquals(
             listOf("45.90.28.195", "45.90.30.195"),

@@ -37,14 +37,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.R
 import com.eyalm.adns.data.Locales
-import com.eyalm.adns.data.network.NextDnsProfile
+import com.eyalm.adns.data.nextdns.api.NextDnsProfile
 import com.eyalm.adns.domain.nextdns.ProfileCapabilities
 import com.eyalm.adns.ui.components.dialogs.BaseDialog
-import com.eyalm.adns.viewmodel.ProfileAction
-import com.eyalm.adns.viewmodel.ProfileActionDialog
-import com.eyalm.adns.viewmodel.ProfileActionsEffect
-import com.eyalm.adns.viewmodel.ProfileActionsViewModel
-import com.eyalm.adns.viewmodel.ProfileNameError
+import com.eyalm.adns.viewmodel.nextdns.ProfileAction
+import com.eyalm.adns.viewmodel.nextdns.ProfileActionDialog
+import com.eyalm.adns.viewmodel.nextdns.ProfileActionsEffect
+import com.eyalm.adns.viewmodel.nextdns.ProfileActionsViewModel
+import com.eyalm.adns.viewmodel.nextdns.ProfileNameError
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -60,6 +60,10 @@ fun LogsActionsSection(
         ActivityResultContracts.CreateDocument("text/csv"),
     ) { destination ->
         if (destination != null) viewModel.exportLogs(profile.id, destination)
+    }
+
+    LaunchedEffect(capabilities) {
+        viewModel.setCapabilities(capabilities)
     }
 
     LaunchedEffect(viewModel) {
@@ -177,6 +181,10 @@ fun ProfileActionsSection(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
+    LaunchedEffect(capabilities) {
+        viewModel.setCapabilities(capabilities)
+    }
+
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
             when (effect) {
@@ -197,7 +205,7 @@ fun ProfileActionsSection(
     Column {
         val actionKeys = buildList {
             add("duplicate")
-            if (capabilities.canDelete) add("rename")
+            if (capabilities.canEditSettings) add("rename")
             if (capabilities.canDelete || capabilities.canLeave) add("delete")
         }
 

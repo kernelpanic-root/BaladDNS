@@ -67,10 +67,9 @@ import com.eyalm.adns.data.nextdns.model.nextDnsFaviconUrl
 import com.eyalm.adns.ui.components.ExpressiveIcon
 import com.eyalm.adns.ui.components.ExpressiveListItem
 import com.eyalm.adns.ui.components.ListIconView
-import com.eyalm.adns.ui.screens.SettingsCategoryScreenTemplate
-import com.eyalm.adns.viewmodel.LogsEffect
-import com.eyalm.adns.viewmodel.LogsViewModel
-import com.eyalm.adns.viewmodel.PendingLogAction
+import com.eyalm.adns.viewmodel.nextdns.LogsEffect
+import com.eyalm.adns.viewmodel.nextdns.LogsViewModel
+import com.eyalm.adns.viewmodel.nextdns.PendingLogAction
 import com.eyalm.adns.viewmodel.ProfileSessionState
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter

@@ -1,12 +1,13 @@
 package com.eyalm.adns.data.nextdns.logs
 
 import com.eyalm.adns.data.network.ApiClient
-import com.eyalm.adns.data.network.NextDnsApi
-import com.eyalm.adns.data.network.NextDnsLogsResponse
-import com.eyalm.adns.data.network.toHexId
+import com.eyalm.adns.data.nextdns.api.NextDnsApi
+import com.eyalm.adns.data.nextdns.api.NextDnsLogsResponse
 import com.eyalm.adns.data.nextdns.api.NextDnsErrorParser
+import com.eyalm.adns.data.nextdns.api.nextDnsApiCall
 import com.eyalm.adns.data.nextdns.api.toBodyApiResult
 import com.eyalm.adns.data.nextdns.api.toEmptyApiResult
+import com.eyalm.adns.data.nextdns.api.toHexId
 import com.eyalm.adns.domain.nextdns.ApiResult
 import com.google.gson.JsonParser
 import java.io.IOException
@@ -37,7 +38,7 @@ class NextDnsLogsRepository(
         profileId: String,
         query: LogsQuery,
         cursor: String? = null,
-    ): ApiResult<NextDnsLogsResponse> = apiCall {
+    ): ApiResult<NextDnsLogsResponse> = nextDnsApiCall {
         api.getLogs(
             profileId = profileId,
             cursor = cursor,
@@ -102,15 +103,4 @@ class NextDnsLogsRepository(
         }
     }
 
-    private suspend inline fun <T> apiCall(
-        block: () -> ApiResult<T>,
-    ): ApiResult<T> = try {
-        block()
-    } catch (error: CancellationException) {
-        throw error
-    } catch (error: IOException) {
-        ApiResult.NetworkFailure(error)
-    } catch (error: Exception) {
-        ApiResult.SerializationFailure(error)
-    }
 }

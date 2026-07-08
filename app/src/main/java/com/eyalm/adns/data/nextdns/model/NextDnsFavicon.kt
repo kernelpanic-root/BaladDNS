@@ -1,7 +1,7 @@
 package com.eyalm.adns.data.nextdns.model
 
 import android.util.Patterns
-import com.eyalm.adns.data.network.toHexId
+import com.eyalm.adns.data.nextdns.api.toHexId
 import java.net.Inet6Address
 import java.net.InetAddress
 import java.util.Locale

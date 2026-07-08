@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.eyalm.adns.R
 import com.eyalm.adns.data.Locales
-import com.eyalm.adns.data.network.NextDnsProfile
+import com.eyalm.adns.data.nextdns.api.NextDnsProfile
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable

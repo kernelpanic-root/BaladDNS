@@ -10,13 +10,13 @@ class SetupRichTextTest {
     fun `interpolates values and preserves numbered tag emphasis`() {
         val segments = GuideRichText(
             template = "Enter <1>{{endpoint}}</1> then save.",
-            values = mapOf("endpoint" to "29a59d.dns.nextdns.io"),
+            values = mapOf("endpoint" to "abc123.dns.nextdns.io"),
         ).segments()
 
         assertEquals(
             listOf(
                 GuideTextSegment("Enter ", emphasized = false),
-                GuideTextSegment("29a59d.dns.nextdns.io", emphasized = true),
+                GuideTextSegment("abc123.dns.nextdns.io", emphasized = true),
                 GuideTextSegment(" then save.", emphasized = false),
             ),
             segments,
@@ -32,7 +32,7 @@ class SetupRichTextTest {
 
     @Test
     fun `link IP capability redacts its token in string form`() {
-        val capability = LinkIpCapability("29a59d", "sensitive-token")
+        val capability = LinkIpCapability("abc123", "synthetic-token")
 
         assertFalse(capability.toString().contains("sensitive-token"))
     }

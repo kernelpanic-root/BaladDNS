@@ -34,8 +34,8 @@ import com.eyalm.adns.data.nextdns.access.AccessField
 import com.eyalm.adns.data.nextdns.access.AccessRole
 import com.eyalm.adns.ui.components.ExpressiveListItem
 import com.eyalm.adns.ui.components.dialogs.BaseDialog
-import com.eyalm.adns.viewmodel.AccessUiState
-import com.eyalm.adns.viewmodel.AccessViewModel
+import com.eyalm.adns.viewmodel.nextdns.AccessUiState
+import com.eyalm.adns.viewmodel.nextdns.AccessViewModel
 
 @Composable
 fun AccessSection(
@@ -46,7 +46,7 @@ fun AccessSection(
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(profileId, refreshRevision) {
-        viewModel.load()
+        viewModel.load(profileId, canManage = true)
     }
 
     ExpressiveListItem(

@@ -1,6 +1,6 @@
 package com.eyalm.adns.data.nextdns.analytics
 
-import com.eyalm.adns.data.network.NextDnsApi
+import com.eyalm.adns.data.nextdns.api.NextDnsApi
 import com.eyalm.adns.domain.nextdns.ApiResult
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.MockResponse

@@ -64,13 +64,12 @@ import com.eyalm.adns.data.nextdns.setup.SetupGuideTag
 import com.eyalm.adns.data.nextdns.setup.SetupContent
 import com.eyalm.adns.data.nextdns.setup.segments
 import com.eyalm.adns.domain.nextdns.ApiResult
-import com.eyalm.adns.ui.screens.SettingsCategoryScreenTemplate
 import com.eyalm.adns.ui.components.dialogs.BaseDialog
 import com.eyalm.adns.ui.components.settings.LoadingError
-import com.eyalm.adns.viewmodel.DdnsDialogState
-import com.eyalm.adns.viewmodel.SetupEffect
-import com.eyalm.adns.viewmodel.SetupUiState
-import com.eyalm.adns.viewmodel.SetupViewModel
+import com.eyalm.adns.viewmodel.nextdns.DdnsDialogState
+import com.eyalm.adns.viewmodel.nextdns.SetupEffect
+import com.eyalm.adns.viewmodel.nextdns.SetupUiState
+import com.eyalm.adns.viewmodel.nextdns.SetupViewModel
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable

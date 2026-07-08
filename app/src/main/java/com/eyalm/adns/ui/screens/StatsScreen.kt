@@ -62,21 +62,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.R
-import com.eyalm.adns.data.ListCard
 import com.eyalm.adns.data.Locales
-import com.eyalm.adns.data.PercentCard
-import com.eyalm.adns.data.StatsRegistry
-import com.eyalm.adns.data.network.NextDnsDeviceItem
-import com.eyalm.adns.data.network.NextDnsDomainData
+import com.eyalm.adns.data.nextdns.api.NextDnsDeviceItem
 import com.eyalm.adns.data.nextdns.analytics.AnalyticsPeriod
+import com.eyalm.adns.data.nextdns.analytics.ListCard
+import com.eyalm.adns.data.nextdns.analytics.PercentCard
+import com.eyalm.adns.data.nextdns.analytics.StatsRegistry
 import com.eyalm.adns.data.nextdns.model.ListIcon
 import com.eyalm.adns.data.nextdns.model.nextDnsFaviconUrl
-import com.eyalm.adns.ui.components.AdnsPullToRefresh
+import com.eyalm.adns.ui.components.refresh.AdnsPullToRefresh
 import com.eyalm.adns.ui.components.GenericStatsListCard
 import com.eyalm.adns.ui.components.GenericStatsPercentCard
 import com.eyalm.adns.ui.components.ListIconView
-import com.eyalm.adns.viewmodel.CardState
-import com.eyalm.adns.viewmodel.StatsViewModel
+import com.eyalm.adns.viewmodel.nextdns.CardState
+import com.eyalm.adns.viewmodel.nextdns.StatsViewModel
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -375,82 +374,6 @@ private fun AnalyticsDeviceSelector(
                 },
             )
 
-        }
-    }
-}
-
-@Composable
-fun BlockedQueriesCard(
-    domains: List<NextDnsDomainData>,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.7f))
-    ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)) {
-
-            Text(
-                text = stringResource(R.string.blocked_queries),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 20.sp
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (domains.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.no_blocked_queries_in_this_period),
-                    modifier = Modifier.padding(32.dp).align(Alignment.CenterHorizontally),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                domains.forEachIndexed { index, item ->
-                    BlockedQueryRow(item = item)
-                    if (index < domains.lastIndex) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(start = 76.dp, end = 24.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun BlockedQueryRow(item: NextDnsDomainData) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-
-
-        ListIconView(
-            icon = nextDnsFaviconUrl(item.domain)
-                ?.let(ListIcon::Url)
-                ?: ListIcon.None,
-            modifier = Modifier
-                .size(36.dp)
-                .clip(RoundedCornerShape(8.dp))
-        )
-        
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            HighlightedDomainText(domain = item.domain)
-            Text(
-                text = stringResource(R.string.queries, formatInteger(item.queries)),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }

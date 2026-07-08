@@ -4,7 +4,7 @@ import android.content.Context
 import com.eyalm.adns.R
 import com.eyalm.adns.data.TokenManager
 import com.eyalm.adns.data.network.ApiClient
-import com.eyalm.adns.data.network.NextDnsLoginRequest
+import com.eyalm.adns.data.nextdns.api.NextDnsLoginRequest
 import com.eyalm.adns.data.nextdns.api.NextDnsErrorParser
 import com.google.gson.JsonParser
 import kotlinx.coroutines.CancellationException

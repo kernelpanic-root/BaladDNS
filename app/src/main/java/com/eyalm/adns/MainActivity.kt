@@ -66,7 +66,7 @@ import com.eyalm.adns.data.models.DnsProviders
 import com.eyalm.adns.data.nextdns.auth.NextDnsSessionManager
 import com.eyalm.adns.ui.components.dialogs.BaseDialog
 import com.eyalm.adns.ui.screens.HomeScreen
-import com.eyalm.adns.ui.screens.SettingsTabRouter
+import com.eyalm.adns.ui.screens.settings.SettingsTabRouter
 import com.eyalm.adns.ui.screens.StatsScreen
 import com.eyalm.adns.ui.screens.UpdateDialog
 import com.eyalm.adns.ui.theme.AdnsTheme

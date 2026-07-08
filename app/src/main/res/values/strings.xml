@@ -181,6 +181,10 @@
     <string name="view_your_dns_logs">View your DNS logs.</string>
     <string name="blocked_only">Blocked only</string>
     <string name="show_only_blocked_items">Show only blocked items</string>
+    <string name="enabled_only">Enabled only</string>
+    <string name="show_only_enabled_items">Show only enabled items</string>
+    <string name="sort_by">Sort by</string>
+    <string name="change_blocklist_sort_order">Change how blocklists are ordered</string>
     <string name="raw_mode">Raw Mode</string>
     <string name="show_raw_dns_logs">Show raw DNS logs.</string>
     <string name="change_device">Change device</string>
@@ -266,4 +270,18 @@
     <string name="setup_nextdns_on_another_device">Setup NextDNS on another device.</string>
     <string name="setup_another_device">Setup another device</string>
     <string name="download_adns">Download ADNS</string>
+    <string name="api_key_required">Enter an API key.</string>
+    <string name="invalid_api_key">This API key is invalid.</string>
+    <string name="server_unavailable_try_again">The NextDNS service is unavailable. Try again later.</string>
+    <string name="login_failed_try_again">Login failed. Please try again.</string>
+    <string name="nextdns_session_expired_title">NextDNS session expired</string>
+    <string name="nextdns_session_expired_message">Sign in again to manage your profiles. Your Private DNS configuration has not been changed.</string>
+    <string name="sign_in">Sign in</string>
+    <string name="remove_list_item_confirmation">This domain will be removed from the list.</string>
+    <string name="remove_item">Remove item</string>
+    <string name="activated_in">Activated %1$s in %2$s</string>
+    <string name="failed_to_add_domain_safe">Could not add %1$s. Please try again.</string>
+    <string name="time">Time</string>
+    <string name="type">Type</string>
+    <string name="notification_permission_denied">Notification permission denied.</string>
 </resources>

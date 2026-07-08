@@ -3,9 +3,9 @@ package com.eyalm.adns.data.nextdns.setup
 import android.content.Context
 import com.eyalm.adns.data.TokenManager
 import com.eyalm.adns.data.network.ApiClient
-import com.eyalm.adns.data.network.NextDnsApi
-import com.eyalm.adns.data.network.NextDnsIpv4Api
-import com.eyalm.adns.data.network.NextDnsLinkIpApi
+import com.eyalm.adns.data.nextdns.api.NextDnsApi
+import com.eyalm.adns.data.nextdns.api.NextDnsIpv4Api
+import com.eyalm.adns.data.nextdns.api.NextDnsLinkIpApi
 import com.eyalm.adns.data.nextdns.api.toJsonApiResult
 import com.eyalm.adns.data.nextdns.api.toServerFailure
 import com.eyalm.adns.domain.nextdns.ApiResult
