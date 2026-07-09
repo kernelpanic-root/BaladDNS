@@ -6,7 +6,6 @@ import com.eyalm.adns.data.nextdns.api.NextDnsErrorParser
 import com.eyalm.adns.data.nextdns.api.nextDnsApiCall
 import com.eyalm.adns.data.nextdns.api.requestId
 import com.eyalm.adns.data.nextdns.api.toEmptyApiResult
-import com.eyalm.adns.data.nextdns.api.toJsonApiResult
 import com.eyalm.adns.data.nextdns.api.toServerFailure
 import com.eyalm.adns.data.nextdns.api.toHexId
 import com.eyalm.adns.domain.nextdns.ApiResult
@@ -88,7 +87,7 @@ class NextDnsSettingsRepository(
         domain: String,
     ): AddCustomDomainResult = when (
         val result = nextDnsApiCall {
-            api.addCustomItem(profileId, page, mapOf("id" to domain)).toJsonApiResult()
+            api.addCustomItem(profileId, page, mapOf("id" to domain)).toEmptyApiResult()
         }
     ) {
         is ApiResult.Success -> AddCustomDomainResult.Added

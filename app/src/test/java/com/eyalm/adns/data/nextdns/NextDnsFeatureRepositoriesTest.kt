@@ -83,6 +83,20 @@ class NextDnsFeatureRepositoriesTest {
     }
 
     @Test
+    fun `successful custom domain add accepts empty response`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(204))
+        val repository = NextDnsSettingsRepository(api)
+
+        val result = repository.addCustomDomain(
+            profileId = "profile-id",
+            page = "allowlist",
+            domain = "example.com",
+        )
+
+        assertEquals(AddCustomDomainResult.Added, result)
+    }
+
+    @Test
     fun `rewrite create maps one item and delete accepts empty success`() = runTest {
         server.enqueue(
             MockResponse()
