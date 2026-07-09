@@ -41,7 +41,7 @@ import com.eyalm.adns.ui.components.refresh.AdnsPullToRefresh
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsCategoryScreenTemplate(
-    onBack: () -> Unit,
+    onBack: (() -> Unit)?,
     title: String,
     description: String = "",
     refreshing: Boolean = false,
@@ -73,11 +73,13 @@ fun SettingsCategoryScreenTemplate(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            Locales.getString("global", "back"),
-                        )
+                    onBack?.let { navigateBack ->
+                        IconButton(onClick = navigateBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                Locales.getString("global", "back"),
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

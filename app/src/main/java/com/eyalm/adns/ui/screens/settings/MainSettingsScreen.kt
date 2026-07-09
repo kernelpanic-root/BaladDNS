@@ -43,7 +43,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -56,9 +58,13 @@ import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.BuildConfig
 import com.eyalm.adns.R
-import com.eyalm.adns.data.models.DnsProviders
+import com.eyalm.adns.data.AppRuntimeRepositories
+import com.eyalm.adns.data.provider.DnsProviderCatalog
+import com.eyalm.adns.data.provider.DnsProviderSelection
+import com.eyalm.adns.data.dns.DnsDisableBehavior
 import com.eyalm.adns.data.nextdns.resources.NextDnsResourceRegistry
 import com.eyalm.adns.ui.components.ExpressiveListItem
+import com.eyalm.adns.ui.components.dialogs.BaseDialog
 import com.eyalm.adns.ui.theme.pageTitle
 import com.eyalm.adns.ui.theme.settingsLabel
 import com.eyalm.adns.viewmodel.SettingsViewModel
@@ -79,13 +85,51 @@ fun MainSettingsScreen(
     val viewModel: SettingsViewModel = viewModel()
     val provider by viewModel.selectedProvider.collectAsState()
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
+    val disableBehavior by viewModel.disableBehavior.collectAsState()
     val context = LocalContext.current
+    val capabilities by remember(context) {
+        AppRuntimeRepositories.capabilities(context.applicationContext)
+    }.state.collectAsState()
+    var disableBehaviorDialogVisible by remember { mutableStateOf(false) }
+    var pendingDisableBehavior by remember(disableBehavior) {
+        mutableStateOf(disableBehavior)
+    }
+
+    if (disableBehaviorDialogVisible) {
+        BaseDialog(
+            title = stringResource(R.string.dns_toggling_mode),
+            confirmLabel = stringResource(R.string.confirm),
+            destructive = false,
+            onConfirm = {
+                viewModel.setDisableBehavior(pendingDisableBehavior)
+                disableBehaviorDialogVisible = false
+            },
+            onDismiss = { disableBehaviorDialogVisible = false },
+        ) {
+            ExpressiveListItem(
+                title = stringResource(R.string.dns_disable_off),
+                description = stringResource(R.string.dns_disable_off_description),
+                isSelected = pendingDisableBehavior == DnsDisableBehavior.Off,
+                onClick = { pendingDisableBehavior = DnsDisableBehavior.Off },
+                isFirst = true,
+            )
+            Spacer(Modifier.height(4.dp))
+            ExpressiveListItem(
+                title = stringResource(R.string.dns_disable_automatic),
+                description = stringResource(R.string.dns_disable_automatic_description),
+                isSelected = pendingDisableBehavior == DnsDisableBehavior.Automatic,
+                onClick = { pendingDisableBehavior = DnsDisableBehavior.Automatic },
+                isLast = true,
+            )
+        }
+    }
 
 
 
     val onAccountSettingsClick = remember(onPageChange) { { onPageChange(Page.ACCOUNT_SETTINGS) } }
     val onSetupClick = remember(onPageChange) { { onPageChange(Page.SETUP) } }
     val onProvidersClick = remember(onPageChange) { { onPageChange(Page.PROVIDERS) } }
+    val onActivationClick = remember(onPageChange) { { onPageChange(Page.ACTIVATION) } }
     val onSecurityClick = remember(onPageChange) { { onPageChange(Page.SECURITY) } }
     val onPrivacyClick = remember(onPageChange) { { onPageChange(Page.PRIVACY) } }
     val onDenylistClick = remember(onPageChange) {  { viewModel.openListScreen(NextDnsResourceRegistry.denylist) } }
@@ -117,7 +161,10 @@ fun MainSettingsScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            val isNextDns = provider == DnsProviders.NEXTDNS
+            val isNextDns = (provider as? DnsProviderSelection.Enhanced)
+                ?.providerId == DnsProviderCatalog.NEXTDNS
+            val providerNameRes = DnsProviderCatalog.default.provider(provider)?.titleRes
+                ?: R.string.custom_dns_hostname
             item {
                 Text(
                     text = stringResource(R.string.settings),
@@ -145,15 +192,15 @@ fun MainSettingsScreen(
                         icon = Icons.Filled.BroadcastOnPersonal,
                         secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         isFirst = true,
-                        isLast = !isNextDns
+                        isLast = !isNextDns,
                     )
                     if (isNextDns) {
                         ExpressiveListItem(
                             onClick = onAccountSettingsClick,
                             icon = Icons.Filled.AccountCircle,
                             secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                             title = stringResource(R.string.settings_1, stringResource(provider.nameRes)),
-                             description = stringResource(R.string.change_account_settings_for, stringResource(provider.nameRes)),
+                             title = stringResource(R.string.settings_1, stringResource(providerNameRes)),
+                             description = stringResource(R.string.change_account_settings_for, stringResource(providerNameRes)),
                              isLast = true,
                         )
                         /*
@@ -257,32 +304,57 @@ fun MainSettingsScreen(
                         modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
                     )
                     ExpressiveListItem(
-                        onClick = onNotificationsClick,
-                        title = stringResource(R.string.state_notifications),
-                        description = stringResource(R.string.enable_or_disable_blocker_state_notifications),
-                        icon = Icons.Filled.Notifications,
-                        interactiveItem = { isSelected, onClick ->
-                            Switch(
-                                checked = isSelected,
-                                onCheckedChange = { onClick() }
-                            )
-                        },
-                        isFirst = true
-                    ) // TODO: Move this to a dedicated "Notifications Settings" page. In that page show the state of the notification permission
-                    ExpressiveListItem(
-                        onClick = onAddQuickTile,
-                        title = stringResource(R.string.add_the_quick_settings_tile),
-                        description = stringResource(R.string.add_the_quick_settings_tile_to_your_device),
+                        onClick = onActivationClick,
                         icon = Icons.Filled.SettingsSuggest,
-                        secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight
+                        secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        title = stringResource(R.string.activation),
+                        description = stringResource(R.string.manage_activation),
+                        isFirst = true,
                     )
+                    if (capabilities.canUseDnsToggleSurfaces) {
+                        ExpressiveListItem(
+                            title = stringResource(R.string.dns_toggling_mode),
+                            description = stringResource(
+                                if (disableBehavior == DnsDisableBehavior.Off) {
+                                    R.string.dns_disable_off
+                                } else {
+                                    R.string.dns_disable_automatic
+                                }
+                            ),
+                            icon = Icons.Filled.Tune,
+                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            onClick = {
+                                pendingDisableBehavior = disableBehavior
+                                disableBehaviorDialogVisible = true
+                            },
+                        )
+                        ExpressiveListItem(
+                            onClick = onNotificationsClick,
+                            title = stringResource(R.string.state_notifications),
+                            description = stringResource(R.string.enable_or_disable_blocker_state_notifications),
+                            icon = Icons.Filled.Notifications,
+                            interactiveItem = { isSelected, onClick ->
+                                Switch(
+                                    checked = isSelected,
+                                    onCheckedChange = { onClick() }
+                                )
+                            },
+                        )
+                        ExpressiveListItem(
+                            onClick = onAddQuickTile,
+                            title = stringResource(R.string.add_the_quick_settings_tile),
+                            description = stringResource(R.string.add_the_quick_settings_tile_to_your_device),
+                            icon = Icons.Filled.SettingsSuggest,
+                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight
+                        )
+                    }
                     ExpressiveListItem(
                         onClick = onLanguagePageClick,
                         title = stringResource(R.string.language),
                         description = stringResource(R.string.language_description),
                         icon = Icons.Filled.Language,
                         secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        isLast = true
+                        isLast = true,
                     )
                 }
             }

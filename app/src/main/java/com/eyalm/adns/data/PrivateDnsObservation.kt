@@ -13,4 +13,4 @@ fun isSelectedPrivateDnsActive(
 ): Boolean =
     observation is PrivateDnsObservation.Hostname &&
         selectedHostname != null &&
-        observation.value == selectedHostname
+        observation.value.equals(selectedHostname, ignoreCase = true)

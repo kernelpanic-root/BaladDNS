@@ -20,7 +20,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -28,6 +30,14 @@ import com.eyalm.adns.R
 import com.eyalm.adns.data.nextdns.resources.NextDnsResourceRegistry
 import com.eyalm.adns.data.nextdns.settings.NextDnsSettingRegistry
 import com.eyalm.adns.viewmodel.SettingsViewModel
+import com.eyalm.adns.data.provider.DnsProviderCatalog
+import com.eyalm.adns.data.provider.DnsProviderSelection
+import com.eyalm.adns.data.AppRuntimeRepositories
+import com.eyalm.adns.data.activation.ActivationMode
+import com.eyalm.adns.data.activation.ActivationRepositories
+import com.eyalm.adns.ui.screens.ActivationExitPolicy
+import com.eyalm.adns.ui.screens.ActivationScreen
+import com.eyalm.adns.viewmodel.OnboardingViewModel
 
 @Composable
 fun SettingsTabRouter(
@@ -41,9 +51,22 @@ fun SettingsTabRouter(
     val page by viewModel.page.collectAsState()
     val selectedProvider by viewModel.selectedProvider.collectAsState()
     val profileSession by viewModel.profileSessionState.collectAsState()
+    val context = LocalContext.current
+    val activationRepository = remember(context) {
+        ActivationRepositories.getInstance(context.applicationContext)
+    }
+    val activationState by activationRepository.state.collectAsState()
+    val capabilities by remember(context) {
+        AppRuntimeRepositories.capabilities(context.applicationContext)
+    }.state.collectAsState()
+    val permissionViewModel: OnboardingViewModel = viewModel()
+    val permissionAcquisitionState by permissionViewModel.permissionState.collectAsState()
 
     LaunchedEffect(selectedProvider) {
-        if (selectedProvider.id == "nextdns") {
+        if (
+            (selectedProvider as? DnsProviderSelection.Enhanced)?.providerId ==
+            DnsProviderCatalog.NEXTDNS
+        ) {
             viewModel.refreshProfileSession()
         }
     }
@@ -110,11 +133,38 @@ fun SettingsTabRouter(
                     onEnhancedModeClick = onNavigateToProvidersActivity
                 )
             }
+            SettingsViewModel.Page.ACTIVATION -> {
+                BackHandler { viewModel.setPage(SettingsViewModel.Page.MAIN) }
+                ActivationScreen(
+                    state = activationState,
+                    permissionAcquisitionState = permissionAcquisitionState,
+                    controlOnlyEligible = capabilities.canManageNextDns,
+                    exitPolicy = ActivationExitPolicy.Allowed,
+                    onStartPermissionMonitoring =
+                        permissionViewModel::startPermissionCheck,
+                    onRequestShizuku = permissionViewModel::requestShizukuActivation,
+                    onExit = {
+                        viewModel.setPage(SettingsViewModel.Page.MAIN)
+                    },
+                    onUseControlOnly = {
+                        activationRepository.changeMode(
+                            ActivationMode.NextDnsControlOnly
+                        )
+                    },
+                    onUsePrivileged = {
+                        activationRepository.changeMode(
+                            ActivationMode.PrivilegedDnsControl
+                        )
+                    },
+                    onStopPermissionAcquisition =
+                        permissionViewModel::stopPermissionAcquisition,
+                )
+            }
             SettingsViewModel.Page.ACCOUNT_SETTINGS -> {
                 BackHandler { viewModel.setPage(SettingsViewModel.Page.MAIN) }
                 AccountSettingsScreen(
                     onBack = { viewModel.setPage(SettingsViewModel.Page.MAIN) },
-                    provider = selectedProvider
+                    canControlPrivateDns = capabilities.canControlPrivateDns,
                 )
             }
             SettingsViewModel.Page.SETUP -> {

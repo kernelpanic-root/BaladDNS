@@ -69,6 +69,7 @@ fun rememberAnimatedShape(
 fun DnsSwitch(
     isEnabled: Boolean,
     onToggle: () -> Unit,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val backgroundColor by animateColorAsState(
@@ -141,7 +142,7 @@ fun DnsSwitch(
             .graphicsLayer { rotationZ = rotation.value }
             .background(backgroundColor, animatedShape)
             .clip(animatedShape)
-            .clickable { onToggle() },
+            .clickable(enabled = enabled) { onToggle() },
         contentAlignment = Alignment.Center
     ) {
         Icon(

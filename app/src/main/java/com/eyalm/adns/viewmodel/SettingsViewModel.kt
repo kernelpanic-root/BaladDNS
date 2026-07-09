@@ -11,10 +11,14 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.eyalm.adns.R
 import com.eyalm.adns.data.DnsRepository
-import com.eyalm.adns.data.models.DnsProvider
-import com.eyalm.adns.data.models.DnsProviders
+import com.eyalm.adns.data.dns.DnsConfigurationResult
+import com.eyalm.adns.data.dns.DnsDisableBehavior
+import com.eyalm.adns.data.provider.DnsProviderCatalog
+import com.eyalm.adns.data.provider.DnsProviderSelection
+import com.eyalm.adns.data.provider.ProviderId
 import com.eyalm.adns.data.nextdns.api.NextDnsProfile
 import com.eyalm.adns.data.nextdns.profile.NextDnsProfileRepository
+import com.eyalm.adns.data.nextdns.profile.DEFAULT_NEXTDNS_DEVICE_NAME
 import com.eyalm.adns.data.nextdns.resources.NextDnsResourceSpec
 import com.eyalm.adns.data.nextdns.auth.NextDnsManagementSession
 import com.eyalm.adns.data.nextdns.auth.NextDnsSessionManager
@@ -24,7 +28,6 @@ import com.eyalm.adns.domain.nextdns.ProfileRole
 import com.eyalm.adns.domain.nextdns.capabilities
 import com.eyalm.adns.domain.nextdns.profileRoleFromWire
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
@@ -45,6 +48,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     enum class Page {
         MAIN,
+        ACTIVATION,
         PROVIDERS,
         ACCOUNT_SETTINGS,
         SETUP,
@@ -60,9 +64,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val repository = DnsRepository(application)
     private val profileRepository = NextDnsProfileRepository(application)
     private val nextDnsSessionManager = NextDnsSessionManager.getInstance(application)
-
-    private val _dnsUrl = MutableStateFlow(repository.getDnsUrl())
-    val dnsUrl: StateFlow<String?> = _dnsUrl.asStateFlow()
 
     private val _notificationsEnabled = MutableStateFlow(repository.isNotificationEnabled())
     val notificationsEnabled = _notificationsEnabled.asStateFlow()
@@ -212,11 +213,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _page = MutableStateFlow(Page.MAIN)
     val page = _page.asStateFlow()
 
-    fun setDnsUrl(url: String) {
-        repository.setCustomUrl(url)
-        _dnsUrl.value = url
-    }
-
     fun addQuickTile() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             val statusBarManager =
@@ -256,24 +252,29 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
 
-    private val _selectedProvider = MutableStateFlow(repository.getSelectedProvider())
-    val selectedProvider = _selectedProvider.asStateFlow()
+    val selectedProvider = repository.getSelectionFlow()
+    val disableBehavior = repository.getDisableBehaviorFlow()
+    private val _providerChangeResult = MutableStateFlow<DnsConfigurationResult?>(null)
+    val providerChangeResult = _providerChangeResult.asStateFlow()
 
-    fun setProvider(providerId: String, url: String? = null) {
-        repository.setProvider(providerId, url)
-        _selectedProvider.value = repository.getSelectedProvider()
-    }
-
-    fun refreshProvider() {
-        _selectedProvider.value = repository.getSelectedProvider()
-    }
-
-    fun isLoggedIn(provider: DnsProvider): Boolean {
-        return when (provider) {
-            DnsProviders.NEXTDNS -> profileRepository.isSignedIn()
-            else -> false
+    fun setProvider(selection: DnsProviderSelection) {
+        viewModelScope.launch {
+            val result = repository.changeSelection(selection)
+            _providerChangeResult.value = result
+            if (result == DnsConfigurationResult.PermissionMissing) {
+                setPage(Page.ACTIVATION)
+            }
         }
     }
+
+    fun setDisableBehavior(value: DnsDisableBehavior) {
+        repository.setDisableBehavior(value)
+    }
+
+    fun refreshProvider() = Unit
+
+    fun isLoggedIn(providerId: ProviderId): Boolean =
+        providerId == DnsProviderCatalog.NEXTDNS && profileRepository.isSignedIn()
 
     suspend fun getEmail(): String {
         return profileRepository.email()
@@ -297,6 +298,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         -> nextDnsSessionManager.requestFeatureAccess()
 
         Page.MAIN,
+        Page.ACTIVATION,
         Page.PROVIDERS,
         Page.LANGUAGE,
         -> true
@@ -309,25 +311,33 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         private set
 
     fun setProfile(profile: NextDnsProfile) {
-        val currentName = profileRepository.deviceName()
-        val nameToSet = currentName.ifEmpty { "ADNS" }
-        profileRepository.selectProfile(profile, nameToSet)
-        nextDnsDeviceName = profileRepository.deviceName()
-        val knownProfiles = _profileSessionState.value.profiles
-        val updatedProfiles = if (knownProfiles.any { it.id == profile.id }) {
-            knownProfiles.map { if (it.id == profile.id) profile else it }
-        } else {
-            knownProfiles + profile
+        viewModelScope.launch {
+            val currentName = profileRepository.deviceName()
+            val nameToSet = currentName.ifEmpty { DEFAULT_NEXTDNS_DEVICE_NAME }
+            profileRepository.selectProfile(profile, nameToSet)
+            nextDnsDeviceName = profileRepository.deviceName()
+            val knownProfiles = _profileSessionState.value.profiles
+            val updatedProfiles = if (knownProfiles.any { it.id == profile.id }) {
+                knownProfiles.map { if (it.id == profile.id) profile else it }
+            } else {
+                knownProfiles + profile
+            }
+            publishProfileSession(updatedProfiles)
+            refreshProvider()
+            refreshProfileSession()
         }
-        publishProfileSession(updatedProfiles)
-        refreshProvider()
-        refreshProfileSession()
     }
 
     fun updateDeviceName(name: String) {
-        profileRepository.setDeviceName(name)
-        nextDnsDeviceName = profileRepository.deviceName()
-        Toast.makeText(getApplication(), getApplication<Application>().getString(R.string.done), Toast.LENGTH_SHORT).show()
+        viewModelScope.launch {
+            profileRepository.setDeviceName(name)
+            nextDnsDeviceName = profileRepository.deviceName()
+            Toast.makeText(
+                getApplication(),
+                getApplication<Application>().getString(R.string.done),
+                Toast.LENGTH_SHORT,
+            ).show()
+        }
     }
 
     fun createProfile(name: String) {
@@ -347,14 +357,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun logout() {
         profileLoadGeneration++
-        profileRepository.signOut()
-        invalidateProfileScopedState()
-        _profileSessionState.value = ProfileSessionState(
-            loading = false,
-            selectedProfileId = profileRepository.currentProfileId(),
-        )
-        setPage(Page.MAIN)
-        refreshProvider()
+        viewModelScope.launch {
+            profileRepository.signOut()
+            invalidateProfileScopedState()
+            _profileSessionState.value = ProfileSessionState(
+                loading = false,
+                selectedProfileId = profileRepository.currentProfileId(),
+            )
+            setPage(Page.MAIN)
+            refreshProvider()
+        }
     }
 
     var currentListSetting: NextDnsResourceSpec? = null

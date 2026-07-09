@@ -18,18 +18,20 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.eyalm.adns.data.models.DnsProviders
 import com.eyalm.adns.ui.screens.providerLogin.Login
 import com.eyalm.adns.ui.screens.providerLogin.ProfileOptionPage
 import com.eyalm.adns.ui.screens.providerLogin.SuccessLoginScreen
 import com.eyalm.adns.ui.theme.AdnsTheme
 import com.eyalm.adns.viewmodel.ProviderLoginViewModel
+import com.eyalm.adns.viewmodel.ProviderLoginResult
+import com.eyalm.adns.viewmodel.ProviderLoginStep
 
 class ProviderLoginActivity : ComponentActivity() {
-    enum class Step { LOGIN, PROFILE, SUCCESS }
-
     private var lastAppliedLang: String? = null
 
     override fun attachBaseContext(newBase: android.content.Context) {
@@ -56,16 +58,21 @@ class ProviderLoginActivity : ComponentActivity() {
         setContent {
 
             val viewModel: ProviderLoginViewModel = viewModel()
-            val providerId = intent.getStringExtra("provider")
-
-            val providers = DnsProviders.getAllProviders
-            val provider = providers.find { it.id == providerId }!!
 
             AdnsTheme {
-
-                val step = viewModel.currentStep
+                val flowState by viewModel.flowState.collectAsState()
+                val step = flowState.step
                 val profiles = viewModel.profiles
 
+                LaunchedEffect(viewModel) {
+                    viewModel.results.collect { result ->
+                        when (result) {
+                            is ProviderLoginResult.Completed,
+                            ProviderLoginResult.Cancelled,
+                            -> finish()
+                        }
+                    }
+                }
 
 
                 Surface(modifier = Modifier.fillMaxSize()) {
@@ -117,17 +124,16 @@ class ProviderLoginActivity : ComponentActivity() {
                         label = "onboarding_step_transition"
                     ) { targetStep ->
                         when (targetStep) {
-                            Step.LOGIN -> {
+                            ProviderLoginStep.Login -> {
                                 Login(
-                                    provider = provider,
                                     onBackClick = {
-                                        finish()
+                                        viewModel.cancel()
                                     }
                                 )
                             }
 
-                            Step.PROFILE -> {
-                                BackHandler { }
+                            ProviderLoginStep.Profile -> {
+                                BackHandler { viewModel.back() }
                                 ProfileOptionPage(
                                     profiles = profiles,
                                     onNextClick = { profile ->
@@ -139,11 +145,11 @@ class ProviderLoginActivity : ComponentActivity() {
                                 )
                             }
 
-                            Step.SUCCESS -> {
-                                BackHandler { finish() }
+                            ProviderLoginStep.Success -> {
+                                BackHandler { viewModel.back() }
                                 SuccessLoginScreen(
                                     onFinishClicked = {
-                                        finish()
+                                        viewModel.commitSelectedProfile()
                                     }
                                 )
                             }

@@ -23,31 +23,31 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.ui.components.OnboardingTemplate
 import com.eyalm.adns.ui.theme.pageTitle
-import com.eyalm.adns.viewmodel.OnboardingViewModel
 
 @Preview
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun AdbActivationScreen(onBack: () -> Unit = { }) {
-    val viewModel: OnboardingViewModel = viewModel()
+fun AdbActivationScreen(
+    onBack: () -> Unit = {},
+    onStartMonitoring: () -> Unit = {},
+    onStopMonitoring: () -> Unit = {},
+) {
     val clipboardManager = LocalClipboardManager.current
-    val context = LocalContext.current
 
-    LaunchedEffect(Unit) {
-        viewModel.startPermissionCheck(context)
+    DisposableEffect(Unit) {
+        onStartMonitoring()
+        onDispose(onStopMonitoring)
     }
 
     OnboardingTemplate(

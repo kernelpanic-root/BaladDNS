@@ -21,4 +21,14 @@ class PrivateDnsObservationTest {
             isSelectedPrivateDnsActive(PrivateDnsObservation.PermissionMissing, null)
         )
     }
+
+    @Test
+    fun `hostname state comparison is case insensitive`() {
+        assertTrue(
+            isSelectedPrivateDnsActive(
+                PrivateDnsObservation.Hostname("living--room-profile.dns.nextdns.io"),
+                "Living--Room-profile.dns.nextdns.io",
+            )
+        )
+    }
 }

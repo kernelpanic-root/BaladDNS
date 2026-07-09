@@ -48,7 +48,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.R
 import com.eyalm.adns.data.Locales
-import com.eyalm.adns.data.models.DnsProvider
 import com.eyalm.adns.data.nextdns.auth.NextDnsLoginFailure
 import com.eyalm.adns.data.nextdns.auth.NextDnsLoginField
 import com.eyalm.adns.data.nextdns.auth.NextDnsLoginMode
@@ -60,7 +59,6 @@ import com.eyalm.adns.viewmodel.ProviderLoginViewModel
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun Login(
-    provider: DnsProvider,
     onBackClick: () -> Unit,
     viewModel: ProviderLoginViewModel = viewModel(),
 ) {

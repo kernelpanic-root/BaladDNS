@@ -48,7 +48,10 @@ class NotificationsManager(private val context: Context) {
     fun updateNotification(isActive: Boolean) {
         if (notificationManager == null) return
 
-        if (!isNotificationEnabled()) {
+        if (
+            !isNotificationEnabled() ||
+            !AppRuntimeRepositories.capabilities(context).current().canUseDnsToggleSurfaces
+        ) {
             notificationManager.cancel(NOTIFICATION_ID)
             return
         }

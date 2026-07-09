@@ -3,19 +3,20 @@ package com.eyalm.adns.viewmodel
 import android.app.Application
 import android.content.Context
 import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.eyalm.adns.BuildConfig
+import com.eyalm.adns.data.AppRuntimeRepositories
 import com.eyalm.adns.data.DnsRepository
-import com.eyalm.adns.data.models.DnsProvider
+import com.eyalm.adns.data.activation.ActivationRepositories
+import com.eyalm.adns.data.dns.DnsConfigurationResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -30,17 +31,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = DnsRepository(application)
     private val sharedPrefs = application.getSharedPreferences("adns_settings", Context.MODE_PRIVATE)
-
-    var dnsProvider by mutableStateOf<DnsProvider?>(null)
-        private set
-
-    init {
-        viewModelScope.launch {
-            repository.getDnsUrlFlow().collect {
-                dnsProvider = repository.getSelectedProvider()
-            }
-        }
-    }
+    private val activationRepository = ActivationRepositories.getInstance(application)
+    val capabilities = AppRuntimeRepositories.capabilities(application).state
+    private val _lastDnsResult = MutableStateFlow<DnsConfigurationResult?>(null)
+    val lastDnsResult = _lastDnsResult.asStateFlow()
 
     val dnsUrlFlow: StateFlow<String> = repository.getDnsUrlFlow()
         .stateIn(
@@ -57,7 +51,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
 
     fun toggleDns() {
-        repository.setAdBlockingState(!adBlockingState.value)
+        activationRepository.refreshPermission()
+        if (!activationRepository.state.value.canControlPrivateDns) {
+            _lastDnsResult.value = DnsConfigurationResult.PermissionMissing
+            return
+        }
+        viewModelScope.launch {
+            _lastDnsResult.value = repository.toggle()
+        }
     }
 
     val runningTimeFlow: StateFlow<String> = flow {
@@ -78,10 +79,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val minutes = (durationMs / (1000 * 60)) % 60
         val hours = (durationMs / (1000 * 60 * 60))
         return String.format(Locale.US, "%02d:%02d:%02d", hours, minutes, seconds)
-    }
-
-    fun setDnsUrl(url: String) {
-        repository.setCustomUrl(url)
     }
 
     fun checkForUpdate(onResult: (String?) -> Unit) {

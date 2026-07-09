@@ -15,8 +15,17 @@ import android.service.quicksettings.TileService
 import android.util.Log
 import com.eyalm.adns.MainActivity
 import com.eyalm.adns.R
-import com.eyalm.adns.data.models.DnsProvider
-import com.eyalm.adns.data.models.DnsProviders
+import com.eyalm.adns.data.dns.AndroidPrivateDnsSettings
+import com.eyalm.adns.data.dns.DnsConfigurationRepository
+import com.eyalm.adns.data.dns.DnsConfigurationResult
+import com.eyalm.adns.data.dns.DnsDisableBehaviorRepositories
+import com.eyalm.adns.data.dns.DnsWriteResult
+import com.eyalm.adns.data.dns.PrivateDnsController
+import com.eyalm.adns.data.activation.ActivationRepositories
+import com.eyalm.adns.data.provider.DnsProviderSelection
+import com.eyalm.adns.data.provider.DnsProviderCatalog
+import com.eyalm.adns.data.provider.ProviderSelectionRepositories
+import com.eyalm.adns.data.provider.ProviderSelectionUpdateResult
 import com.eyalm.adns.services.AdnsTileService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +35,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
@@ -35,6 +45,19 @@ class DnsRepository(rawContext: Context) {
     private val sharedPrefs = context.getSharedPreferences("adns_settings", Context.MODE_PRIVATE)
     private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val notificationManager = NotificationsManager(context)
+    private val activationRepository = ActivationRepositories.getInstance(context)
+    private val providerSelectionRepository =
+        ProviderSelectionRepositories.getInstance(context)
+    private val privateDnsController = PrivateDnsController(
+        AndroidPrivateDnsSettings(resolver)
+    )
+    private val disableBehaviorRepository =
+        DnsDisableBehaviorRepositories.getInstance(context)
+    private val configurationRepository = DnsConfigurationRepository(
+        selectionRepository = providerSelectionRepository,
+        privateDnsControl = privateDnsController,
+        disableBehavior = { disableBehaviorRepository.behavior.value },
+    )
 
     init {
         // DnsNotificationManager initializes the channel in its constructor
@@ -51,8 +74,16 @@ class DnsRepository(rawContext: Context) {
             }
         }
 
-        resolver.registerContentObserver(Settings.Global.getUriFor(DnsConstants.MODE_KEY), false, observer)
-        resolver.registerContentObserver(Settings.Global.getUriFor(DnsConstants.SPECIFIER_KEY), false, observer)
+        resolver.registerContentObserver(
+            Settings.Global.getUriFor(AndroidPrivateDnsSettings.MODE_KEY),
+            false,
+            observer,
+        )
+        resolver.registerContentObserver(
+            Settings.Global.getUriFor(AndroidPrivateDnsSettings.SPECIFIER_KEY),
+            false,
+            observer,
+        )
 
         trySend(readPrivateDnsObservation())
 
@@ -79,156 +110,124 @@ class DnsRepository(rawContext: Context) {
         }
     }
 
-    private fun readPrivateDnsObservation(): PrivateDnsObservation = try {
-        val mode = Settings.Global.getString(resolver, DnsConstants.MODE_KEY)
-        val hostname = Settings.Global.getString(resolver, DnsConstants.SPECIFIER_KEY)
-        when (mode) {
-            DnsConstants.MODE_HOSTNAME -> hostname
-                ?.takeIf(String::isNotBlank)
-                ?.let(PrivateDnsObservation::Hostname)
-                ?: PrivateDnsObservation.Off
-
-            DnsConstants.MODE_AUTOMATIC -> PrivateDnsObservation.Automatic
-            else -> PrivateDnsObservation.Off
-        }
-    } catch (error: SecurityException) {
-        Log.e("DnsRepository", "Permission denied checking DNS settings", error)
-        PrivateDnsObservation.PermissionMissing
-    }
-
-
-    fun setAdBlockingState(enabled: Boolean): kotlinx.coroutines.Job {
-        return repositoryScope.launch {
-            try {
-                val url = getDnsUrl() ?: throw IllegalStateException("No DNS URL configured")
-                if (enabled) {
-                    Settings.Global.putString(
-                        resolver,
-                        DnsConstants.SPECIFIER_KEY,
-                        url
-                    )
-                    Settings.Global.putString(
-                        resolver,
-                        DnsConstants.MODE_KEY,
-                        DnsConstants.MODE_HOSTNAME
-                    )
-                    saveStartTime(System.currentTimeMillis())
-                } else {
-                    Settings.Global.putString(resolver, DnsConstants.MODE_KEY, DnsConstants.MODE_OFF)
-                    saveStartTime(0L)
-                }
-                updateNotification()
-                updateShortcuts()
-                // Notify the system that the tile state might have changed
-                TileService.requestListeningState(context, ComponentName(context, AdnsTileService::class.java))
-            } catch (e: SecurityException) {
-                Log.e("DnsRepository", "Permission denied: app activated?")
+    fun readPrivateDnsObservation(): PrivateDnsObservation =
+        privateDnsController.observe().also { observation ->
+            if (observation == PrivateDnsObservation.PermissionMissing) {
+                activationRepository.refreshPermission()
             }
         }
+
+    suspend fun toggle(): DnsConfigurationResult {
+        if (!canControlPrivateDns()) return DnsConfigurationResult.PermissionMissing
+        return configurationRepository.toggle().also(::onConfigurationResult)
     }
 
-    fun setCustomUrl(url: String) {
-        require(url.isNotBlank() && url.matches(Regex("""^[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}$"""))) {
-            context.getString(R.string.invalid_dns_hostname)
-        }
-
-        val matchedStandard = DnsProviders.getAllProviders
-            .filterIsInstance<DnsProvider.Standard>()
-            .find { it.hostname == url }
-
-        val edit = sharedPrefs.edit()
-
-        if (matchedStandard != null) {
-            edit.putString("selected_provider_id", matchedStandard.id)
+    suspend fun setEnabled(enabled: Boolean): DnsConfigurationResult {
+        if (!canControlPrivateDns()) return DnsConfigurationResult.PermissionMissing
+        val result = if (enabled) {
+            when (val write = privateDnsController.enable(getDnsUrl())) {
+                is DnsWriteResult.Success -> DnsConfigurationResult.StateChanged(write.observation)
+                DnsWriteResult.PermissionMissing -> DnsConfigurationResult.PermissionMissing
+                DnsWriteResult.MissingHostname -> DnsConfigurationResult.MissingHostname
+                is DnsWriteResult.Failure,
+                is DnsWriteResult.Rejected,
+                -> DnsConfigurationResult.WriteFailed(write)
+            }
         } else {
-
-            edit.putString("selected_provider_id", "custom")
-            edit.putString("custom_url", url)
-        }
-
-        edit.apply()
-
-
-        val isActive = isAdBlockingActive()
-        if (isActive) {
-            setAdBlockingState(true)
-        }
-    }
-
-
-    fun getSelectedProvider(): DnsProvider {
-
-        val savedId = sharedPrefs.getString("selected_provider_id", DnsProviders.ADGUARD.id) ?: DnsProviders.ADGUARD.id
-
-        val provider = DnsProviders.getAllProviders.find { it.id == savedId }
-
-        if (provider != null) return provider
-
-        val customUrl = sharedPrefs.getString("custom_url", "") ?: ""
-        return DnsProvider.Custom(customUrl)
-
-    }
-
-    fun setProvider(providerId: String, url: String? = null) {
-
-        val isActive = isAdBlockingActive()
-
-        val edit = sharedPrefs.edit()
-        edit.putString("selected_provider_id", providerId)
-
-        Log.d("DnsRepository", "Setting provider to $providerId")
-
-        if (providerId == "custom") {
-            require(!url.isNullOrBlank() && android.util.Patterns.DOMAIN_NAME.matcher(url).matches()) {
-                context.getString(R.string.invalid_dns_hostname)
+            when (
+                val write = privateDnsController.disable(disableBehaviorRepository.behavior.value)
+            ) {
+                is DnsWriteResult.Success -> DnsConfigurationResult.StateChanged(write.observation)
+                DnsWriteResult.PermissionMissing -> DnsConfigurationResult.PermissionMissing
+                DnsWriteResult.MissingHostname -> DnsConfigurationResult.MissingHostname
+                is DnsWriteResult.Failure,
+                is DnsWriteResult.Rejected,
+                -> DnsConfigurationResult.WriteFailed(write)
             }
-            edit.putString("custom_url", url)
-        } else if (providerId == "nextdns" && !url.isNullOrBlank()) {
-            edit.putString("enhanced_url", url)
         }
-
-        edit.apply()
-
-        if (isActive) {
-            val newUrl = getDnsUrl()
-            if (newUrl != null) {
-                setAdBlockingState(true)
-            } else throw IllegalStateException("No DNS URL configured")
-        }
-
-
+        onConfigurationResult(result)
+        return result
     }
 
+    suspend fun changeSelection(
+        selection: DnsProviderSelection,
+    ): DnsConfigurationResult {
+        if (!canControlPrivateDns()) return DnsConfigurationResult.PermissionMissing
+        return configurationRepository
+            .changeSelection(selection)
+            .also(::onConfigurationResult)
+    }
+
+    suspend fun changeEnhancedSelection(hostname: String): DnsConfigurationResult {
+        if (!canControlPrivateDns()) return DnsConfigurationResult.PermissionMissing
+        return configurationRepository.changeEnhancedSelection(
+            providerId = DnsProviderCatalog.NEXTDNS,
+            hostname = hostname,
+        ).also(::onConfigurationResult)
+    }
+
+    fun stageEnhancedSelection(hostname: String): ProviderSelectionUpdateResult {
+        val hostnameResult = providerSelectionRepository.setEnhancedHostname(hostname)
+        if (hostnameResult !is ProviderSelectionUpdateResult.Saved) return hostnameResult
+        return providerSelectionRepository.save(
+            DnsProviderSelection.Enhanced(DnsProviderCatalog.NEXTDNS)
+        )
+    }
+
+    fun stageSelection(selection: DnsProviderSelection): ProviderSelectionUpdateResult =
+        providerSelectionRepository.save(selection)
+
+    fun clearEnhancedHostname(): ProviderSelectionUpdateResult =
+        providerSelectionRepository.setEnhancedHostname(null)
+
+    fun currentSelection(): DnsProviderSelection =
+        providerSelectionRepository.selection.value
+
+    fun getSelectionFlow() = providerSelectionRepository.selection
+
+    fun getDisableBehaviorFlow() = disableBehaviorRepository.behavior
+
+    fun setDisableBehavior(value: com.eyalm.adns.data.dns.DnsDisableBehavior) {
+        disableBehaviorRepository.set(value)
+    }
+
+    private fun canControlPrivateDns(): Boolean {
+        activationRepository.refreshPermission()
+        return activationRepository.state.value.canControlPrivateDns
+    }
 
     fun getDnsUrl(): String? {
-        val selectedProvider = getSelectedProvider()
-
-        return when (selectedProvider) {
-            is DnsProvider.Standard -> selectedProvider.hostname
-            is DnsProvider.Custom -> selectedProvider.userUrl
-            is DnsProvider.Enhanced -> sharedPrefs.getString("enhanced_url", null)
-        }
-
+        return providerSelectionRepository.resolvedHostname.value
     }
 
-    fun getDnsUrlFlow(): Flow<String> = callbackFlow {
-        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == "custom_url" || key == "selected_provider_id" || key == "enhanced_url") {
-                val url = getDnsUrl()
-                if (url != null) {
-                    trySend(url)
-                }
+    fun getDnsUrlFlow(): Flow<String> = providerSelectionRepository
+        .resolvedHostname
+        .filterNotNull()
+        .distinctUntilChanged()
+
+    private fun onConfigurationResult(result: DnsConfigurationResult) {
+        if (result == DnsConfigurationResult.PermissionMissing) {
+            activationRepository.refreshPermission()
+            updateNotification()
+            updateShortcuts()
+            return
+        }
+        if (
+            result is DnsConfigurationResult.StateChanged ||
+            result is DnsConfigurationResult.Changed
+        ) {
+            val active = isAdBlockingActive()
+            if (!active) {
+                saveStartTime(0L)
+            } else if (sharedPrefs.getLong("start_time", 0L) == 0L) {
+                saveStartTime(System.currentTimeMillis())
             }
-        }
-        sharedPrefs.registerOnSharedPreferenceChangeListener(listener)
-        val url = getDnsUrl()
-        if (url != null) {
-            trySend(url)
-        } else {
-            throw IllegalStateException("No DNS URL configured")
-        }
-        awaitClose {
-            sharedPrefs.unregisterOnSharedPreferenceChangeListener(listener)
+            updateNotification()
+            updateShortcuts()
+            TileService.requestListeningState(
+                context,
+                ComponentName(context, AdnsTileService::class.java),
+            )
         }
     }
 
@@ -250,8 +249,21 @@ class DnsRepository(rawContext: Context) {
     fun updateShortcuts() {
         val isActive = isAdBlockingActive()
         val shortcutManager = context.getSystemService(ShortcutManager::class.java) ?: return
+        val shortcutId = "toggle_dns"
+        if (!AppRuntimeRepositories.capabilities(context).current().canUseDnsToggleSurfaces) {
+            runCatching {
+                shortcutManager.disableShortcuts(
+                    listOf(shortcutId),
+                    context.getString(R.string.activation_required),
+                )
+            }.onFailure {
+                Log.e("DnsRepository", "Failed to disable DNS shortcut", it)
+            }
+            return
+        }
+        runCatching { shortcutManager.enableShortcuts(listOf(shortcutId)) }
 
-        val toggleShortcut = ShortcutInfo.Builder(context, "toggle_dns")
+        val toggleShortcut = ShortcutInfo.Builder(context, shortcutId)
             .setShortLabel(if (isActive) context.getString(R.string.disable_blocker) else context.getString(R.string.enable_blocker))
             .setLongLabel(if (isActive) context.getString(R.string.disable_ad_blocker) else context.getString(R.string.enable_ad_blocker))
             .setIcon(Icon.createWithResource(context, R.drawable.ic_launcher_monochrome))

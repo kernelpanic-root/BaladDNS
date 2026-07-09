@@ -1,9 +1,7 @@
 package com.eyalm.adns
 
-import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -47,30 +45,39 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.core.content.edit
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.data.DnsRepository
 import com.eyalm.adns.data.LocaleHelper
-import com.eyalm.adns.data.models.DnsProvider
-import com.eyalm.adns.data.models.DnsProviders
+import com.eyalm.adns.data.activation.ActivationMode
+import com.eyalm.adns.data.activation.ActivationRepositories
 import com.eyalm.adns.data.nextdns.auth.NextDnsSessionManager
+import com.eyalm.adns.data.provider.DnsProviderCatalog
+import com.eyalm.adns.data.provider.DnsProviderSelection
+import com.eyalm.adns.domain.AppCapabilities
+import com.eyalm.adns.domain.AppDestination
+import com.eyalm.adns.domain.MainTab
+import com.eyalm.adns.domain.resolveAvailableMainTab
 import com.eyalm.adns.ui.components.dialogs.BaseDialog
+import com.eyalm.adns.ui.screens.forcedActivationExitPolicy
+import com.eyalm.adns.ui.screens.ActivationScreen
 import com.eyalm.adns.ui.screens.HomeScreen
+import com.eyalm.adns.ui.screens.updatedForcedActivationVisibility
 import com.eyalm.adns.ui.screens.settings.SettingsTabRouter
 import com.eyalm.adns.ui.screens.StatsScreen
 import com.eyalm.adns.ui.screens.UpdateDialog
 import com.eyalm.adns.ui.theme.AdnsTheme
 import com.eyalm.adns.viewmodel.MainViewModel
+import com.eyalm.adns.viewmodel.OnboardingViewModel
 import com.eyalm.adns.viewmodel.SettingsViewModel
 import kotlinx.coroutines.launch
 
@@ -104,8 +111,9 @@ class MainActivity : ComponentActivity() {
             return
         }
         lifecycleScope.launch {
+            ActivationRepositories.getInstance(applicationContext).refreshPermission()
             settingsViewModel.refreshProvider()
-            if (settingsViewModel.selectedProvider.value is DnsProvider.Enhanced) {
+            if (settingsViewModel.selectedProvider.value is DnsProviderSelection.Enhanced) {
                 settingsViewModel.refreshProfileSession()
                 settingsViewModel.email = settingsViewModel.getEmail()
             }
@@ -121,7 +129,14 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        if (checkSelfPermission(Manifest.permission.WRITE_SECURE_SETTINGS) != PackageManager.PERMISSION_GRANTED) {
+        val activationRepository = ActivationRepositories.getInstance(applicationContext)
+        activationRepository.refreshPermission()
+        if (
+            com.eyalm.adns.data.AppRuntimeRepositories
+                .capabilities(applicationContext)
+                .current()
+                .startupDestination == AppDestination.Onboarding
+        ) {
             startActivity(Intent(this, OnboardingActivity::class.java))
             finish()
             return
@@ -129,43 +144,77 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         handleShortcutIntent(intent)
 
-        lifecycleScope.launch {
-            // migrate from 1.0.3
-            val sharedPreferences = getSharedPreferences("adns_settings", MODE_PRIVATE)
-            val oldHostname = sharedPreferences.getString("custom_url", null)
-            oldHostname?.let {
-                val provider = DnsProviders.getProviderByHostname(oldHostname)
-                val repository = DnsRepository(context)
-                sharedPreferences.edit { remove("custom_url") }
-                if (provider is DnsProvider.Custom) {
-                    repository.setProvider("custom", oldHostname)
-                } else {
-                    repository.setProvider(provider.id)
-                }
-            }
-        }
-
         setContent {
             AdnsTheme {
                 val isEnabled by viewModel.adBlockingState.collectAsState()
                 val runningTime by viewModel.runningTimeFlow.collectAsState()
                 val server by viewModel.dnsUrlFlow.collectAsState()
                 val settingsPage by settingsViewModel.page.collectAsState()
+                val capabilities by viewModel.capabilities.collectAsState()
+                val activationState by activationRepository.state.collectAsState()
+                val permissionViewModel: OnboardingViewModel = viewModel()
+                val permissionAcquisitionState by
+                    permissionViewModel.permissionState.collectAsState()
+                var activationVisible by rememberSaveable {
+                    mutableStateOf(
+                        capabilities.startupDestination == AppDestination.Activation
+                    )
+                }
+                var previousActivationWarning by remember {
+                    mutableStateOf(capabilities.showActivationWarning)
+                }
+
+                LaunchedEffect(capabilities.showActivationWarning) {
+                    activationVisible = updatedForcedActivationVisibility(
+                        currentlyVisible = activationVisible,
+                        previouslyRequired = previousActivationWarning,
+                        currentlyRequired = capabilities.showActivationWarning,
+                    )
+                    previousActivationWarning = capabilities.showActivationWarning
+                }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        isEnabled = isEnabled,
-                        runningTime = runningTime,
-                        onToggle = { viewModel.toggleDns() },
-                        modifier = Modifier.padding(innerPadding),
-                        server = server,
-                        onEditClick = {
-                            settingsViewModel.setPage(SettingsViewModel.Page.PROVIDERS)
-                        },
-                        checkForUpdate = viewModel::checkForUpdate,
-                        settingsPage = settingsPage
-
-                    )
+                    if (activationVisible) {
+                        ActivationScreen(
+                            state = activationState,
+                            permissionAcquisitionState = permissionAcquisitionState,
+                            controlOnlyEligible = capabilities.canManageNextDns,
+                            exitPolicy = forcedActivationExitPolicy(
+                                controlOnlyEligible = capabilities.canManageNextDns,
+                            ),
+                            onStartPermissionMonitoring =
+                                permissionViewModel::startPermissionCheck,
+                            onRequestShizuku = permissionViewModel::requestShizukuActivation,
+                            onExit = { activationVisible = false },
+                            onUseControlOnly = {
+                                activationRepository.changeMode(
+                                    ActivationMode.NextDnsControlOnly
+                                )
+                                activationVisible = false
+                            },
+                            onUsePrivileged = {
+                                activationRepository.changeMode(
+                                    ActivationMode.PrivilegedDnsControl
+                                )
+                            },
+                            onStopPermissionAcquisition =
+                                permissionViewModel::stopPermissionAcquisition,
+                        )
+                    } else {
+                        Greeting(
+                            isEnabled = isEnabled,
+                            runningTime = runningTime,
+                            onToggle = { viewModel.toggleDns() },
+                            modifier = Modifier.padding(innerPadding),
+                            server = server,
+                            onEditClick = {
+                                settingsViewModel.setPage(SettingsViewModel.Page.PROVIDERS)
+                            },
+                            checkForUpdate = viewModel::checkForUpdate,
+                            settingsPage = settingsPage,
+                            capabilities = capabilities,
+                        )
+                    }
                 }
 
             }
@@ -184,19 +233,43 @@ fun Greeting(
     server: String = "dns.adguard-dns.com",
     onEditClick: () -> Unit = {},
     checkForUpdate: ((String?) -> Unit) -> Unit = {},
-    settingsPage: SettingsViewModel.Page = SettingsViewModel.Page.MAIN
+    settingsPage: SettingsViewModel.Page = SettingsViewModel.Page.MAIN,
+    capabilities: AppCapabilities,
 ) {
 
-    var selectedItem by remember { mutableIntStateOf(0) }
+    var selectedItem by remember(capabilities.defaultTab) {
+        mutableStateOf(capabilities.defaultTab)
+    }
     val homeTab = stringResource(R.string.home)
     val statsTab = stringResource(R.string.stats)
     val settingsTab = stringResource(R.string.settings)
-    val items = remember(homeTab, statsTab, settingsTab) { listOf(homeTab, statsTab, settingsTab) }
-    val selectedIcons = remember { listOf(Icons.Filled.Home, Icons.Filled.Insights, Icons.Filled.Settings) }
+    val labels = remember(homeTab, statsTab, settingsTab) {
+        mapOf(
+            MainTab.Home to homeTab,
+            MainTab.Stats to statsTab,
+            MainTab.Settings to settingsTab,
+        )
+    }
+    val selectedIcons = remember {
+        mapOf(
+            MainTab.Home to Icons.Filled.Home,
+            MainTab.Stats to Icons.Filled.Insights,
+            MainTab.Settings to Icons.Filled.Settings,
+        )
+    }
     val unselectedIcons = remember {
-        listOf(Icons.Outlined.Home, Icons.Outlined.Insights, Icons.Outlined.Settings)
+        mapOf(
+            MainTab.Home to Icons.Outlined.Home,
+            MainTab.Stats to Icons.Outlined.Insights,
+            MainTab.Settings to Icons.Outlined.Settings,
+        )
     }
     val context = LocalContext.current
+    val dnsRepository = remember(context) { DnsRepository(context.applicationContext) }
+    LaunchedEffect(capabilities.canUseDnsToggleSurfaces) {
+        dnsRepository.updateShortcuts()
+        dnsRepository.updateNotification()
+    }
     val onNavigateToProviders = remember(context) {
         { providerId: String ->
             val intent = Intent(context, ProviderLoginActivity::class.java).apply {
@@ -218,7 +291,7 @@ fun Greeting(
             destructive = false,
             onConfirm = {
                 nextDnsSessionManager.dismissReauthenticationRequest()
-                onNavigateToProviders(DnsProviders.NEXTDNS.id)
+                onNavigateToProviders(DnsProviderCatalog.NEXTDNS.value)
             },
             onDismiss = nextDnsSessionManager::dismissReauthenticationRequest,
         )
@@ -226,7 +299,6 @@ fun Greeting(
     val latestVersion = remember { mutableStateOf<String?>(null) }
 
     val settingsViewModel: SettingsViewModel = viewModel()
-    val selectedProvider by settingsViewModel.selectedProvider.collectAsState()
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -261,35 +333,47 @@ fun Greeting(
         }
     }
 
-    BackHandler(enabled = selectedItem != 0) {
-        selectedItem = 0
+    LaunchedEffect(capabilities.visibleTabs, capabilities.defaultTab) {
+        selectedItem = resolveAvailableMainTab(selectedItem, capabilities)
+    }
+
+    BackHandler(enabled = selectedItem != capabilities.defaultTab) {
+        selectedItem = capabilities.defaultTab
     }
 
     Scaffold(
         bottomBar = {
             AnimatedVisibility(
-                visible = !(settingsPage != SettingsViewModel.Page.MAIN && selectedItem == 2),
+                visible = !(
+                    settingsPage != SettingsViewModel.Page.MAIN &&
+                        selectedItem == MainTab.Settings
+                    ),
                 enter = slideInVertically { it } + fadeIn(),
                 exit = slideOutVertically { it } + fadeOut()
             ) {
                 NavigationBar {
-                    items.forEachIndexed { index, item ->
-                        if ((index == 1 && selectedProvider is DnsProvider.Enhanced) || index != 1)
+                    capabilities.visibleTabs.forEach { item ->
                         NavigationBarItem(
                             icon = {
                                 Icon(
-                                    if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
-                                    contentDescription = item,
+                                    imageVector = requireNotNull(
+                                        if (selectedItem == item) {
+                                            selectedIcons[item]
+                                        } else {
+                                            unselectedIcons[item]
+                                        }
+                                    ),
+                                    contentDescription = labels[item],
                                 )
                             },
-                            label = { Text(item) },
-                            selected = selectedItem == index,
+                            label = { Text(requireNotNull(labels[item])) },
+                            selected = selectedItem == item,
                             onClick = {
                                 if (
-                                    index != 1 ||
+                                    item != MainTab.Stats ||
                                     nextDnsSessionManager.requestFeatureAccess()
                                 ) {
-                                    selectedItem = index
+                                    selectedItem = item
                                 }
                             },
                         )
@@ -320,29 +404,30 @@ fun Greeting(
             label = "MainContentTransition"
         ) { targetIndex ->
             when (targetIndex) {
-                0 -> {
+                MainTab.Home -> {
                     HomeScreen(
                         isEnabled = isEnabled,
                         runningTime = runningTime,
                         onToggle = onToggle,
+                        controlsEnabled = capabilities.canUseDnsToggleSurfaces,
                         server = server,
                         onEditClick = {
-                            selectedItem = 2
+                            selectedItem = MainTab.Settings
                             onEditClick()
                         },
                         innerPadding = innerPadding,
                         onSettingsClick = {
-                            selectedItem = 2
+                            selectedItem = MainTab.Settings
                         }
                     )
 
                 }
 
-                1 -> StatsScreen(
+                MainTab.Stats -> StatsScreen(
                     innerPadding
                 )
 
-                2 -> {
+                MainTab.Settings -> {
                     SettingsTabRouter(
                         modifier = Modifier.padding(innerPadding),
                         onNavigateToProvidersActivity = onNavigateToProviders,
@@ -364,7 +449,20 @@ fun GreetingPreview() {
         Greeting(
             isEnabled = true,
             runningTime = "00:05:23",
-            onToggle = {}
+            onToggle = {},
+            capabilities = AppCapabilities(
+                canControlPrivateDns = true,
+                canUseDnsToggleSurfaces = true,
+                canManageNextDns = false,
+                showHome = true,
+                showStats = false,
+                showActivationWarning = false,
+                canRunRuntimeMonitor = true,
+                canUseWifiRules = true,
+                defaultTab = MainTab.Home,
+                visibleTabs = listOf(MainTab.Home, MainTab.Settings),
+                startupDestination = AppDestination.Main(MainTab.Home),
+            ),
         )
     }
 }

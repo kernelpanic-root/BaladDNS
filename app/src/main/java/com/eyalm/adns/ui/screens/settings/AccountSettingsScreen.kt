@@ -49,7 +49,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.eyalm.adns.data.models.DnsProvider
 import com.eyalm.adns.data.Locales
 import com.eyalm.adns.ui.components.refresh.AdnsPullToRefresh
 import com.eyalm.adns.ui.components.ProfilesList
@@ -61,7 +60,7 @@ import com.eyalm.adns.viewmodel.SettingsViewModel
 @Composable
 fun AccountSettingsScreen(
     onBack: () -> Unit = {},
-    provider: DnsProvider
+    canControlPrivateDns: Boolean = true,
 ) {
     val viewModel: SettingsViewModel = viewModel()
     val email = viewModel.email
@@ -126,7 +125,10 @@ fun AccountSettingsScreen(
             ) {
             item {
                 Text(
-                    text = stringResource(R.string.settings_1, stringResource(provider.nameRes)),
+                    text = stringResource(
+                        R.string.settings_1,
+                        stringResource(R.string.nextdns_name),
+                    ),
                     style = MaterialTheme.typography.pageTitle,
                     color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(top = 40.dp),
@@ -160,41 +162,43 @@ fun AccountSettingsScreen(
                             )
 
                             Spacer(modifier = Modifier.height(16.dp))
-                            OutlinedTextField(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(64.dp),
-                                value = deviceName,
-                                onValueChange = { deviceName = it },
-                                label = { Text(stringResource(R.string.device_name_for_logs)) },
-                                isError = !isDeviceNameValid,
-                                trailingIcon = {
-                                    IconButton(
-                                        onClick = {
-                                            if (isDeviceNameValid) {
-                                                viewModel.updateDeviceName(deviceName)
-                                            }
-                                        },
-                                        enabled = isDeviceNameValid && deviceName != viewModel.nextDnsDeviceName
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Done,
-                                            contentDescription = stringResource(R.string.save_device_name),
-                                            tint = if (isDeviceNameValid && deviceName != viewModel.nextDnsDeviceName)
-                                                MaterialTheme.colorScheme.primary
-                                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                                        )
-                                    }
-                                },
-                                placeholder = { Text(stringResource(R.string.device_name_is_not_set)) },
-                                shape = RoundedCornerShape(12.dp),
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Text,
-                                    imeAction = ImeAction.Done
-                                ),
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
+                            if (shouldShowDeviceNameEditor(canControlPrivateDns)) {
+                                OutlinedTextField(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(64.dp),
+                                    value = deviceName,
+                                    onValueChange = { deviceName = it },
+                                    label = { Text(stringResource(R.string.device_name_for_logs)) },
+                                    isError = !isDeviceNameValid,
+                                    trailingIcon = {
+                                        IconButton(
+                                            onClick = {
+                                                if (isDeviceNameValid) {
+                                                    viewModel.updateDeviceName(deviceName)
+                                                }
+                                            },
+                                            enabled = isDeviceNameValid && deviceName != viewModel.nextDnsDeviceName
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Done,
+                                                contentDescription = stringResource(R.string.save_device_name),
+                                                tint = if (isDeviceNameValid && deviceName != viewModel.nextDnsDeviceName)
+                                                    MaterialTheme.colorScheme.primary
+                                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                            )
+                                        }
+                                    },
+                                    placeholder = { Text(stringResource(R.string.device_name_is_not_set)) },
+                                    shape = RoundedCornerShape(12.dp),
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Text,
+                                        imeAction = ImeAction.Done
+                                    ),
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                            }
                             Button(
                                 onClick = {
                                     viewModel.logout()
@@ -230,6 +234,9 @@ fun AccountSettingsScreen(
         }
     }
 }
+
+fun shouldShowDeviceNameEditor(canControlPrivateDns: Boolean): Boolean =
+    canControlPrivateDns
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable

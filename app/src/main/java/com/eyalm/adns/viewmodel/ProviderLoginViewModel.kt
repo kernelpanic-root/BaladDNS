@@ -7,7 +7,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.eyalm.adns.ProviderLoginActivity
+import com.eyalm.adns.data.provider.DnsProviderCatalog
+import com.eyalm.adns.data.dns.DnsConfigurationResult
 import com.eyalm.adns.data.nextdns.api.NextDnsProfile
 import com.eyalm.adns.data.nextdns.auth.NextDnsAuthRepository
 import com.eyalm.adns.data.nextdns.auth.NextDnsLoginFailure
@@ -15,11 +16,15 @@ import com.eyalm.adns.data.nextdns.auth.NextDnsLoginField
 import com.eyalm.adns.data.nextdns.auth.NextDnsLoginMode
 import com.eyalm.adns.data.nextdns.auth.NextDnsLoginOutcome
 import com.eyalm.adns.data.nextdns.auth.NextDnsLoginUiState
+import com.eyalm.adns.data.nextdns.auth.NextDnsManagementSession
+import com.eyalm.adns.data.nextdns.auth.NextDnsSessionManager
 import com.eyalm.adns.data.nextdns.auth.fieldErrors
 import com.eyalm.adns.data.nextdns.auth.isValidTwoFactorCode
 import com.eyalm.adns.data.nextdns.profile.NextDnsProfileRepository
 import com.eyalm.adns.domain.nextdns.ApiResult
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -27,11 +32,18 @@ import kotlinx.coroutines.launch
 class ProviderLoginViewModel(application: Application) : AndroidViewModel(application) {
     private val profileRepository = NextDnsProfileRepository(application)
     private val authRepository = NextDnsAuthRepository(application)
+    private val flow = ProviderLoginFlow()
+    private val sessionManager = NextDnsSessionManager.getInstance(application)
+    private var resumeRequested = false
 
-    var currentStep by mutableStateOf(ProviderLoginActivity.Step.LOGIN)
-        private set
+    val flowState = flow.state
+    private val _results = MutableSharedFlow<ProviderLoginResult>(extraBufferCapacity = 1)
+    val results = _results.asSharedFlow()
 
     var profiles by mutableStateOf(emptyList<NextDnsProfile>())
+        private set
+
+    var selectedProfile by mutableStateOf<NextDnsProfile?>(null)
         private set
 
     private val _state = MutableStateFlow(NextDnsLoginUiState())
@@ -71,7 +83,7 @@ class ProviderLoginViewModel(application: Application) : AndroidViewModel(applic
                 is NextDnsLoginOutcome.Authenticated -> {
                     profiles = result.profiles
                     clearSecrets()
-                    currentStep = ProviderLoginActivity.Step.PROFILE
+                    flow.authenticated()
                 }
 
                 is NextDnsLoginOutcome.Failure -> {
@@ -185,8 +197,51 @@ class ProviderLoginViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun setProfile(profile: NextDnsProfile) {
-        profileRepository.selectProfile(profile, "ADNS")
-        currentStep = ProviderLoginActivity.Step.SUCCESS
+        selectedProfile = profile
+        flow.profileSelected(profile.id)
+    }
+
+    fun resumeSession() {
+        if (
+            resumeRequested ||
+            sessionManager.state.value != NextDnsManagementSession.Active ||
+            flow.state.value.step != ProviderLoginStep.Login
+        ) {
+            return
+        }
+        resumeRequested = true
+        viewModelScope.launch {
+            when (val result = profileRepository.profiles()) {
+                is ApiResult.Success -> {
+                    profiles = result.value
+                    flow.authenticated()
+                }
+
+                else -> resumeRequested = false
+            }
+        }
+    }
+
+    fun back() {
+        flow.back()
+    }
+
+    fun cancel() {
+        _results.tryEmit(ProviderLoginResult.Cancelled)
+    }
+
+    fun commitSelectedProfile() {
+        val profile = selectedProfile ?: return
+        viewModelScope.launch {
+            if (profileRepository.selectProfile(profile) is DnsConfigurationResult.Changed) {
+                _results.emit(
+                    ProviderLoginResult.Completed(
+                        providerId = DnsProviderCatalog.NEXTDNS.value,
+                        profileId = profile.id,
+                    )
+                )
+            }
+        }
     }
 
     fun createProfile(name: String) {

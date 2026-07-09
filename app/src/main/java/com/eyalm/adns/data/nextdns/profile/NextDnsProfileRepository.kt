@@ -3,9 +3,13 @@ package com.eyalm.adns.data.nextdns.profile
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.edit
+import com.eyalm.adns.data.AppRuntimeRepositories
 import com.eyalm.adns.data.DnsRepository
 import com.eyalm.adns.data.TokenManager
-import com.eyalm.adns.data.models.DnsProviders
+import com.eyalm.adns.data.dns.DnsConfigurationResult
+import com.eyalm.adns.data.provider.DnsProviderCatalog
+import com.eyalm.adns.data.provider.DnsProviderSelection
+import com.eyalm.adns.data.provider.ResolverPresetId
 import com.eyalm.adns.data.network.ApiClient
 import com.eyalm.adns.data.nextdns.api.NextDnsApi
 import com.eyalm.adns.data.nextdns.api.NextDnsCreateProfileRequest
@@ -89,25 +93,23 @@ class NextDnsProfileRepository(
         }
     }
 
-    fun selectProfile(profile: NextDnsProfile, deviceName: String? = null) {
-        val sanitizedName = deviceName?.replace(" ", "--")
-        val hostname = if (sanitizedName.isNullOrEmpty()) {
-            "${profile.id}.dns.nextdns.io"
-        } else {
-            "$sanitizedName-${profile.id}.dns.nextdns.io"
-        }
-        dnsRepository.setProvider(DnsProviders.NEXTDNS.id, hostname)
+    suspend fun selectProfile(
+        profile: NextDnsProfile,
+        deviceName: String? = DEFAULT_NEXTDNS_DEVICE_NAME,
+    ): DnsConfigurationResult {
+        return selectProfileId(profile.id, deviceName)
     }
 
-    fun setDeviceName(deviceName: String) {
-        val profileId = currentProfileId() ?: return
-        val sanitizedName = deviceName.trim().replace(" ", "--")
-        val hostname = if (sanitizedName.isEmpty()) {
-            "$profileId.dns.nextdns.io"
-        } else {
-            "$sanitizedName-$profileId.dns.nextdns.io"
-        }
-        dnsRepository.setProvider(DnsProviders.NEXTDNS.id, hostname)
+    suspend fun selectProfileId(
+        profileId: String,
+        deviceName: String? = DEFAULT_NEXTDNS_DEVICE_NAME,
+    ): DnsConfigurationResult = selectProfileHostname(
+        nextDnsProfileHostname(profileId, deviceName)
+    )
+
+    suspend fun setDeviceName(deviceName: String): DnsConfigurationResult? {
+        val profileId = currentProfileId() ?: return null
+        return selectProfileHostname(nextDnsProfileHostname(profileId, deviceName))
     }
 
     fun deviceName(): String {
@@ -120,16 +122,49 @@ class NextDnsProfileRepository(
         }
     }
 
-    fun clearSelectedProfile() {
-        sharedPreferences.edit { remove("enhanced_url") }
-        if (dnsRepository.getSelectedProvider().id == DnsProviders.NEXTDNS.id) {
-            dnsRepository.setProvider(DnsProviders.ADGUARD.id)
+    suspend fun clearSelectedProfile() {
+        if (dnsRepository.currentSelection() is DnsProviderSelection.Enhanced) {
+            if (!selectFallbackProvider()) return
+        }
+        dnsRepository.clearEnhancedHostname()
+    }
+
+    suspend fun signOut() {
+        NextDnsSessionManager.getInstance(appContext).signedOut()
+    }
+
+    private suspend fun selectProfileHostname(hostname: String): DnsConfigurationResult {
+        val capabilities = AppRuntimeRepositories.capabilities(appContext).current()
+        return if (capabilities.canControlPrivateDns) {
+            dnsRepository.changeEnhancedSelection(hostname)
+        } else {
+            when (dnsRepository.stageEnhancedSelection(hostname)) {
+                is com.eyalm.adns.data.provider.ProviderSelectionUpdateResult.Saved ->
+                    DnsConfigurationResult.Changed(
+                        DnsProviderSelection.Enhanced(DnsProviderCatalog.NEXTDNS),
+                        appliedToDevice = false,
+                    )
+
+                is com.eyalm.adns.data.provider.ProviderSelectionUpdateResult.Invalid ->
+                    DnsConfigurationResult.InvalidSelection
+            }
         }
     }
 
-    fun signOut() {
-        NextDnsSessionManager.getInstance(appContext).signedOut()
-        dnsRepository.setProvider(DnsProviders.ADGUARD.id)
+    private suspend fun selectFallbackProvider(): Boolean {
+        val fallback = DnsProviderSelection.Standard(
+            DnsProviderCatalog.ADGUARD,
+            ResolverPresetId("default"),
+        )
+        val result = if (
+            AppRuntimeRepositories.capabilities(appContext).current().canControlPrivateDns
+        ) {
+            dnsRepository.changeSelection(fallback)
+        } else {
+            return dnsRepository.stageSelection(fallback) is
+                com.eyalm.adns.data.provider.ProviderSelectionUpdateResult.Saved
+        }
+        return result is DnsConfigurationResult.Changed
     }
 
     suspend fun clearLogs(profileId: String): ApiResult<Unit> = authenticatedCall {
@@ -251,6 +286,20 @@ class NextDnsProfileRepository(
         status = 401,
         problems = listOf(ApiProblem("authRequired")),
     )
+}
+
+const val DEFAULT_NEXTDNS_DEVICE_NAME = "ADNS"
+
+fun nextDnsProfileHostname(
+    profileId: String,
+    deviceName: String? = DEFAULT_NEXTDNS_DEVICE_NAME,
+): String {
+    val sanitizedName = deviceName.orEmpty().trim().replace(" ", "--")
+    return if (sanitizedName.isEmpty()) {
+        "$profileId.dns.nextdns.io"
+    } else {
+        "$sanitizedName-$profileId.dns.nextdns.io"
+    }
 }
 
 private fun <T> ApiResult<JsonObject>.asFailure(): ApiResult<T> = when (this) {

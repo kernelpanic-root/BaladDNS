@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.eyalm.adns.data.DnsRepository
-import com.eyalm.adns.data.models.DnsProvider
+import com.eyalm.adns.data.provider.DnsProviderSelection
 import com.eyalm.adns.data.nextdns.api.NextDnsDeviceItem
 import com.eyalm.adns.data.nextdns.api.NextDnsStatsGraphResponse
 import com.eyalm.adns.data.nextdns.analytics.AnalyticsPeriod
@@ -68,10 +68,10 @@ class StatsViewModel(application: Application) : AndroidViewModel(application) {
     init {
         viewModelScope.launch {
             dnsRepository.getDnsUrlFlow().collectLatest {
-                val provider = dnsRepository.getSelectedProvider()
+                val provider = dnsRepository.currentSelection()
                 val profileId = profileRepository.currentProfileId()
                 if (
-                    provider is DnsProvider.Enhanced &&
+                    provider is DnsProviderSelection.Enhanced &&
                     profileId != null &&
                     sessionManager.state.value == NextDnsManagementSession.Active
                 ) {
@@ -103,7 +103,7 @@ class StatsViewModel(application: Application) : AndroidViewModel(application) {
                     (_state.value.graphError as? ApiResult.ServerFailure)?.status == 401
                 ) {
                     val profileId = profileRepository.currentProfileId()
-                    if (dnsRepository.getSelectedProvider() is DnsProvider.Enhanced && profileId != null) {
+                    if (dnsRepository.currentSelection() is DnsProviderSelection.Enhanced && profileId != null) {
                         activateProfile(profileId)
                     }
                 }

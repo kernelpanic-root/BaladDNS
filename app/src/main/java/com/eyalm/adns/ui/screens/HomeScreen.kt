@@ -44,6 +44,7 @@ fun HomeScreen(
     isEnabled: Boolean,
     runningTime: String,
     onToggle: () -> Unit,
+    controlsEnabled: Boolean = true,
     server: String = "dns.adguard-dns.com",
     onEditClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
@@ -124,7 +125,8 @@ fun HomeScreen(
             DnsSwitch(
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 isEnabled = isEnabled,
-                onToggle = onToggle
+                onToggle = onToggle,
+                enabled = controlsEnabled,
             )
         }
     }
