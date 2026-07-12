@@ -1,18 +1,18 @@
 package com.eyalm.adns.services
-import com.eyalm.adns.R
-
 
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
-import android.util.Log
+import com.eyalm.adns.R
 import com.eyalm.adns.data.AppRuntimeRepositories
 import com.eyalm.adns.data.DnsRepository
 import com.eyalm.adns.data.activation.ActivationRepositories
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AdnsTileService : TileService() {
 
@@ -22,17 +22,29 @@ class AdnsTileService : TileService() {
 
     private val repository by lazy { DnsRepository(this) }
     private val capabilities by lazy { AppRuntimeRepositories.capabilities(this).state }
-    private var job: Job? = null
+    private val toggleScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var listeningJob: Job? = null
+    private var lastKnownState: Boolean? = null
 
     override fun onStartListening() {
         super.onStartListening()
         ActivationRepositories.getInstance(this).refreshPermission()
 
-        job?.cancel()
-        job = CoroutineScope(Dispatchers.Main).launch {
+        listeningJob?.cancel()
+        listeningJob = CoroutineScope(Dispatchers.Main).launch {
+            val initialState = withContext(Dispatchers.IO) {
+                repository.isAdBlockingActive()
+            }
+            lastKnownState = initialState
+            updateTile(
+                isActive = initialState,
+                available = capabilities.value.canUseDnsToggleSurfaces,
+            )
+
             combine(repository.getDnsStatusFlow(), capabilities) { active, capability ->
                 active to capability.canUseDnsToggleSurfaces
             }.collect { (active, available) ->
+                lastKnownState = active
                 updateTile(active, available)
             }
         }
@@ -40,8 +52,8 @@ class AdnsTileService : TileService() {
 
     override fun onStopListening() {
         super.onStopListening()
-        job?.cancel()
-        job = null
+        listeningJob?.cancel()
+        listeningJob = null
     }
 
     override fun onClick() {
@@ -51,8 +63,18 @@ class AdnsTileService : TileService() {
             updateTile(isActive = false, available = false)
             return
         }
-        job = CoroutineScope(Dispatchers.Main).launch {
+        toggleScope.launch {
             repository.toggle()
+            val actualState = repository.isAdBlockingActive()
+            withContext(Dispatchers.Main) {
+                lastKnownState = resolveQuickTileState(lastKnownState, actualState)
+                if (listeningJob?.isActive == true) {
+                    updateTile(
+                        isActive = actualState,
+                        available = capabilities.value.canUseDnsToggleSurfaces,
+                    )
+                }
+            }
         }
     }
 
@@ -69,3 +91,8 @@ class AdnsTileService : TileService() {
         tile.updateTile()
     }
 }
+
+internal fun resolveQuickTileState(
+    currentState: Boolean?,
+    actualState: Boolean?,
+): Boolean? = actualState ?: currentState
