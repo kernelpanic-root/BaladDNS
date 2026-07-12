@@ -26,6 +26,8 @@ import com.eyalm.adns.data.provider.DnsProviderSelection
 import com.eyalm.adns.data.provider.DnsProviderCatalog
 import com.eyalm.adns.data.provider.ProviderSelectionRepositories
 import com.eyalm.adns.data.provider.ProviderSelectionUpdateResult
+import com.eyalm.adns.data.runtime.RuntimeServiceController
+import com.eyalm.adns.data.wifi.WifiRuleCoordinators
 import com.eyalm.adns.services.AdnsTileService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +38,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
@@ -44,7 +47,6 @@ class DnsRepository(rawContext: Context) {
     private val resolver = context.contentResolver
     private val sharedPrefs = context.getSharedPreferences("adns_settings", Context.MODE_PRIVATE)
     private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private val notificationManager = NotificationsManager(context)
     private val activationRepository = ActivationRepositories.getInstance(context)
     private val providerSelectionRepository =
         ProviderSelectionRepositories.getInstance(context)
@@ -58,10 +60,6 @@ class DnsRepository(rawContext: Context) {
         privateDnsControl = privateDnsController,
         disableBehavior = { disableBehaviorRepository.behavior.value },
     )
-
-    init {
-        // DnsNotificationManager initializes the channel in its constructor
-    }
 
     fun isAdBlockingActive(): Boolean {
         return isSelectedPrivateDnsActive(readPrivateDnsObservation(), getDnsUrl())
@@ -93,12 +91,26 @@ class DnsRepository(rawContext: Context) {
 
     }.distinctUntilChanged()
 
-    fun getDnsStatusFlow(): Flow<Boolean> = combine(
+    data class RuntimeDnsState(
+        val observation: PrivateDnsObservation,
+        val selectedHostname: String,
+        val selectedResolverActive: Boolean,
+    )
+
+    fun getDnsRuntimeStateFlow(): Flow<RuntimeDnsState> = combine(
         observePrivateDns(),
         getDnsUrlFlow(),
     ) { observation, selectedHostname ->
-        isSelectedPrivateDnsActive(observation, selectedHostname)
-    }.distinctUntilChanged().onEach { isActive ->
+        RuntimeDnsState(
+            observation = observation,
+            selectedHostname = selectedHostname,
+            selectedResolverActive = isSelectedPrivateDnsActive(
+                observation,
+                selectedHostname,
+            ),
+        )
+    }.distinctUntilChanged().onEach { state ->
+        val isActive = state.selectedResolverActive
         if (!isActive) {
             saveStartTime(0L)
         } else if (getStartTime() == 0L) {
@@ -106,9 +118,12 @@ class DnsRepository(rawContext: Context) {
         }
         repositoryScope.launch {
             updateShortcuts()
-            updateNotification()
         }
     }
+
+    fun getDnsStatusFlow(): Flow<Boolean> = getDnsRuntimeStateFlow()
+        .map { it.selectedResolverActive }
+        .distinctUntilChanged()
 
     fun readPrivateDnsObservation(): PrivateDnsObservation =
         privateDnsController.observe().also { observation ->
@@ -208,21 +223,26 @@ class DnsRepository(rawContext: Context) {
     private fun onConfigurationResult(result: DnsConfigurationResult) {
         if (result == DnsConfigurationResult.PermissionMissing) {
             activationRepository.refreshPermission()
-            updateNotification()
             updateShortcuts()
+            RuntimeServiceController.sync(context)
             return
         }
         if (
             result is DnsConfigurationResult.StateChanged ||
             result is DnsConfigurationResult.Changed
         ) {
+            if (result is DnsConfigurationResult.Changed) {
+                repositoryScope.launch {
+                    WifiRuleCoordinators.getInstance(context)
+                        .updateRestoreHostname(getDnsUrl())
+                }
+            }
             val active = isAdBlockingActive()
             if (!active) {
                 saveStartTime(0L)
             } else if (sharedPrefs.getLong("start_time", 0L) == 0L) {
                 saveStartTime(System.currentTimeMillis())
             }
-            updateNotification()
             updateShortcuts()
             TileService.requestListeningState(
                 context,
@@ -280,15 +300,4 @@ class DnsRepository(rawContext: Context) {
         }
     }
 
-    fun updateNotification() {
-        notificationManager.updateNotification(isAdBlockingActive())
-    }
-
-    fun isNotificationEnabled(): Boolean {
-        return notificationManager.isNotificationEnabled()
-    }
-
-    fun setNotificationEnabled(enabled: Boolean) {
-        notificationManager.setNotificationEnabled(enabled, isAdBlockingActive())
-    }
 }

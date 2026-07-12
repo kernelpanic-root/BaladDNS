@@ -4,13 +4,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -63,6 +60,7 @@ import com.eyalm.adns.data.activation.ActivationRepositories
 import com.eyalm.adns.data.nextdns.auth.NextDnsSessionManager
 import com.eyalm.adns.data.provider.DnsProviderCatalog
 import com.eyalm.adns.data.provider.DnsProviderSelection
+import com.eyalm.adns.data.runtime.RuntimeServiceController
 import com.eyalm.adns.domain.AppCapabilities
 import com.eyalm.adns.domain.AppDestination
 import com.eyalm.adns.domain.MainTab
@@ -79,6 +77,7 @@ import com.eyalm.adns.ui.theme.AdnsTheme
 import com.eyalm.adns.viewmodel.MainViewModel
 import com.eyalm.adns.viewmodel.OnboardingViewModel
 import com.eyalm.adns.viewmodel.SettingsViewModel
+import com.eyalm.adns.viewmodel.RuntimeMonitoringViewModel
 import kotlinx.coroutines.launch
 
 
@@ -86,6 +85,7 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
     private val settingsViewModel: SettingsViewModel by viewModels()
+    private val runtimeMonitoringViewModel: RuntimeMonitoringViewModel by viewModels()
     private var lastAppliedLang: String? = null
 
     override fun attachBaseContext(newBase: Context) {
@@ -112,6 +112,7 @@ class MainActivity : ComponentActivity() {
         }
         lifecycleScope.launch {
             ActivationRepositories.getInstance(applicationContext).refreshPermission()
+            runtimeMonitoringViewModel.refreshSystemState()
             settingsViewModel.refreshProvider()
             if (settingsViewModel.selectedProvider.value is DnsProviderSelection.Enhanced) {
                 settingsViewModel.refreshProfileSession()
@@ -268,7 +269,7 @@ fun Greeting(
     val dnsRepository = remember(context) { DnsRepository(context.applicationContext) }
     LaunchedEffect(capabilities.canUseDnsToggleSurfaces) {
         dnsRepository.updateShortcuts()
-        dnsRepository.updateNotification()
+        RuntimeServiceController.sync(context.applicationContext)
     }
     val onNavigateToProviders = remember(context) {
         { providerId: String ->
@@ -297,25 +298,6 @@ fun Greeting(
         )
     }
     val latestVersion = remember { mutableStateOf<String?>(null) }
-
-    val settingsViewModel: SettingsViewModel = viewModel()
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            settingsViewModel.setNotificationsEnabled(true)
-            Log.d("Permission", "Permission Granted")
-        } else {
-            settingsViewModel.setNotificationsEnabled(false)
-            Toast.makeText(
-                context,
-                R.string.notification_permission_denied,
-                Toast.LENGTH_SHORT,
-            ).show()
-        }
-    }
-
-
 
     if (!BuildConfig.IS_FOSS) {
         LaunchedEffect(Unit) {
@@ -431,7 +413,6 @@ fun Greeting(
                     SettingsTabRouter(
                         modifier = Modifier.padding(innerPadding),
                         onNavigateToProvidersActivity = onNavigateToProviders,
-                        permissionLauncher = permissionLauncher,
                         innerPadding = innerPadding
                     )
                 }

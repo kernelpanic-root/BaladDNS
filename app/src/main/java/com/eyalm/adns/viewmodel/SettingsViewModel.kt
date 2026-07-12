@@ -49,6 +49,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     enum class Page {
         MAIN,
         ACTIVATION,
+        NOTIFICATIONS,
+        WIFI_RULES,
         PROVIDERS,
         ACCOUNT_SETTINGS,
         SETUP,
@@ -64,9 +66,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val repository = DnsRepository(application)
     private val profileRepository = NextDnsProfileRepository(application)
     private val nextDnsSessionManager = NextDnsSessionManager.getInstance(application)
-
-    private val _notificationsEnabled = MutableStateFlow(repository.isNotificationEnabled())
-    val notificationsEnabled = _notificationsEnabled.asStateFlow()
 
     private val _profileSessionState = MutableStateFlow(
         ProfileSessionState(
@@ -205,11 +204,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         )
     }
 
-    fun setNotificationsEnabled(enabled: Boolean) {
-        repository.setNotificationEnabled(enabled)
-        _notificationsEnabled.value = enabled
-    }
-
     private val _page = MutableStateFlow(Page.MAIN)
     val page = _page.asStateFlow()
 
@@ -245,12 +239,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             ).show()
         }
     }
-
-    fun refreshNotification() {
-        repository.updateNotification()
-        _notificationsEnabled.value = repository.isNotificationEnabled()
-    }
-
 
     val selectedProvider = repository.getSelectionFlow()
     val disableBehavior = repository.getDisableBehaviorFlow()
@@ -299,6 +287,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
         Page.MAIN,
         Page.ACTIVATION,
+        Page.NOTIFICATIONS,
+        Page.WIFI_RULES,
         Page.PROVIDERS,
         Page.LANGUAGE,
         -> true

@@ -1,12 +1,9 @@
 package com.eyalm.adns.ui.screens.settings
 
 
-import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.os.Build
 import android.util.Log
-import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,13 +29,13 @@ import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.SettingsSuggest
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -59,10 +56,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.BuildConfig
 import com.eyalm.adns.R
 import com.eyalm.adns.data.AppRuntimeRepositories
-import com.eyalm.adns.data.provider.DnsProviderCatalog
-import com.eyalm.adns.data.provider.DnsProviderSelection
 import com.eyalm.adns.data.dns.DnsDisableBehavior
 import com.eyalm.adns.data.nextdns.resources.NextDnsResourceRegistry
+import com.eyalm.adns.data.provider.DnsProviderCatalog
+import com.eyalm.adns.data.provider.DnsProviderSelection
 import com.eyalm.adns.ui.components.ExpressiveListItem
 import com.eyalm.adns.ui.components.dialogs.BaseDialog
 import com.eyalm.adns.ui.theme.pageTitle
@@ -77,14 +74,12 @@ fun MainSettingsScreen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
     onAddQuickTile: () -> Unit = {},
-    permissionLauncher: ActivityResultLauncher<String>? = null,
     currentPage: Page = Page.MAIN,
     onPageChange: (Page) -> Unit = {},
     innerPadding: PaddingValues
 ) {
     val viewModel: SettingsViewModel = viewModel()
     val provider by viewModel.selectedProvider.collectAsState()
-    val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
     val disableBehavior by viewModel.disableBehavior.collectAsState()
     val context = LocalContext.current
     val capabilities by remember(context) {
@@ -130,27 +125,14 @@ fun MainSettingsScreen(
     val onSetupClick = remember(onPageChange) { { onPageChange(Page.SETUP) } }
     val onProvidersClick = remember(onPageChange) { { onPageChange(Page.PROVIDERS) } }
     val onActivationClick = remember(onPageChange) { { onPageChange(Page.ACTIVATION) } }
+    val onNotificationSettingsClick = remember(onPageChange) { { onPageChange(Page.NOTIFICATIONS) } }
+    val onWifiRulesClick = remember(onPageChange) { { onPageChange(Page.WIFI_RULES) } }
     val onSecurityClick = remember(onPageChange) { { onPageChange(Page.SECURITY) } }
     val onPrivacyClick = remember(onPageChange) { { onPageChange(Page.PRIVACY) } }
     val onDenylistClick = remember(onPageChange) {  { viewModel.openListScreen(NextDnsResourceRegistry.denylist) } }
     val onAllowlistClick = remember(onPageChange) {  { viewModel.openListScreen(NextDnsResourceRegistry.allowlist) } }
     val onParentalControlClick = remember(onPageChange) { { onPageChange(Page.PARENTAL_CONTROL) } }
     val onSettingsPageClick = remember(onPageChange) { { onPageChange(Page.SETTINGS_PAGE) } }
-    val onNotificationsClick = remember(permissionLauncher, notificationsEnabled) {
-        {
-            val nextState = !notificationsEnabled
-            if (nextState) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    permissionLauncher?.launch(Manifest.permission.POST_NOTIFICATIONS)
-                } else {
-                    viewModel.setNotificationsEnabled(true)
-                }
-            } else {
-                viewModel.setNotificationsEnabled(false)
-            }
-            Unit
-        }
-    }
     val onLanguagePageClick = remember(onPageChange) { { onPageChange(Page.LANGUAGE) } }
     val onLogsClick =   remember(onPageChange) { { onPageChange(Page.LOGS)} }
 
@@ -329,16 +311,18 @@ fun MainSettingsScreen(
                             },
                         )
                         ExpressiveListItem(
-                            onClick = onNotificationsClick,
+                            onClick = onNotificationSettingsClick,
                             title = stringResource(R.string.state_notifications),
                             description = stringResource(R.string.enable_or_disable_blocker_state_notifications),
                             icon = Icons.Filled.Notifications,
-                            interactiveItem = { isSelected, onClick ->
-                                Switch(
-                                    checked = isSelected,
-                                    onCheckedChange = { onClick() }
-                                )
-                            },
+                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        )
+                        ExpressiveListItem(
+                            onClick = onWifiRulesClick,
+                            title = stringResource(R.string.wifi_rules),
+                            description = stringResource(R.string.wifi_rules_enable_description),
+                            icon = Icons.Filled.Wifi,
+                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         )
                         ExpressiveListItem(
                             onClick = onAddQuickTile,

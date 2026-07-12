@@ -2,7 +2,6 @@ package com.eyalm.adns.ui.screens.settings
 
 
 import androidx.activity.compose.BackHandler
-import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.SizeTransform
@@ -43,7 +42,6 @@ import com.eyalm.adns.viewmodel.OnboardingViewModel
 fun SettingsTabRouter(
     modifier: Modifier = Modifier,
     onNavigateToProvidersActivity: (String) -> Unit,
-    permissionLauncher: ActivityResultLauncher<String>? = null,
     innerPadding: PaddingValues
 
 ) {
@@ -120,7 +118,6 @@ fun SettingsTabRouter(
                 MainSettingsScreen(
                     modifier = modifier,
                     onAddQuickTile = { viewModel.addQuickTile() },
-                    permissionLauncher = permissionLauncher,
                     currentPage = page,
                     onPageChange = viewModel::setPage,
                     innerPadding = innerPadding
@@ -158,6 +155,18 @@ fun SettingsTabRouter(
                     },
                     onStopPermissionAcquisition =
                         permissionViewModel::stopPermissionAcquisition,
+                )
+            }
+            SettingsViewModel.Page.NOTIFICATIONS -> {
+                BackHandler { viewModel.setPage(SettingsViewModel.Page.MAIN) }
+                NotificationSettingsScreen(
+                    onBack = { viewModel.setPage(SettingsViewModel.Page.MAIN) },
+                )
+            }
+            SettingsViewModel.Page.WIFI_RULES -> {
+                BackHandler { viewModel.setPage(SettingsViewModel.Page.MAIN) }
+                WifiRulesScreen(
+                    onBack = { viewModel.setPage(SettingsViewModel.Page.MAIN) },
                 )
             }
             SettingsViewModel.Page.ACCOUNT_SETTINGS -> {
