@@ -26,17 +26,6 @@ You can grant access using:
 - [Shizuku](https://github.com/RikkaApps/Shizuku) (recommended)
 - ADB shell
 
-## State of NextDNS Implementation
-
-Almost all of NextDNS's web dashboard features and settings are natively implemented into ADNS. However, there are a few exceptions:
-- Full Logs view 
-- Setup guides for other devices 
-- Account settings (change email, password, manage plan)
-- Recreation Time in Parental Control settings
-- A few options within the Profile Settings: Logs configurations, Rewrites, and Access. 
-
-Everything else is fully integrated, meaning you can manage almost any NextDNS setting straight from ADNS! The ultimate goal is to have all of these remaining features natively implemented within the app.
-
 <br>
 <br>
 <p align="center">

@@ -1,0 +1,10 @@
+- Added NextDNS Logs, Setup, Rewrites & Profile Actions.
+- Filter stats by device and custom lists.
+- New Control-only mode (no Shizuku/ADB required).
+- New activation status page & background-powered state notifications.
+- Added Wi-Fi rules service to auto-disable Private DNS.
+- Generic Provider support with public server filters.
+- Flexible toggle modes (Off / Automatic) & language selection.
+- Dark/light modes & dynamic colors.
+
+Full notes at GitHub.
