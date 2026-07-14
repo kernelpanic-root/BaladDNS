@@ -101,14 +101,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (latestVersion[0] == 'v') { latestVersion = latestVersion.substring(1) }
 
                 if (BuildConfig.VERSION_NAME == latestVersion) {
-                    Log.d("update", "No new update, version from github: $latestVersion")
-                    Log.d("update", "is new update dismissed: false}")
                     sharedPrefs.edit { putBoolean("isNewUpdateDismissed", false) }
                     withContext(Dispatchers.Main) { onResult(null) }
                 } else {
 
                     if (sharedPrefs.getBoolean("isNewUpdateDismissed", false) ) {
-                        Log.d("update", "isNewUpdateDismissed: true")
                         withContext(Dispatchers.Main) { onResult(null) }
                     } else {
                         sharedPrefs.edit { putBoolean("isNewUpdateDismissed", true) }

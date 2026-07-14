@@ -28,7 +28,8 @@
         android:localeConfig="@xml/locales_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Adns">
+        android:theme="@style/Theme.Adns"
+        tools:ignore="UnusedTranslation">
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
             android:enabled="false"
@@ -41,13 +42,13 @@
             android:name=".ProviderLoginActivity"
             android:windowSoftInputMode="adjustResize"
             android:exported="false"
-            android:label="@string/title_activity_provider_login"
+            android:label="@string/app_name"
             android:theme="@style/Theme.Adns" />
         <activity
             android:name=".OnboardingActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize"
-            android:label="@string/title_activity_onboarding"
+            android:label="@string/app_name"
             android:theme="@style/Theme.Adns" />
         <activity
             android:name=".MainActivity"
@@ -69,13 +70,15 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
-        <receiver android:name=".services.ToggleReceiver" />
+        <receiver
+            android:name=".services.ToggleReceiver"
+            android:exported="false" />
 
         <service
             android:name=".services.AdnsTileService"
             android:exported="true"
             android:icon="@drawable/ic_qs_adns"
-            android:label="ADNS Block"
+            android:label="@string/adns_adblock"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
@@ -96,7 +99,8 @@
             android:authorities="${applicationId}.shizuku"
             android:enabled="true"
             android:exported="true"
-            android:multiprocess="false" />
+            android:multiprocess="false"
+            tools:ignore="ExportedContentProvider" />
     </application>
 
 </manifest>

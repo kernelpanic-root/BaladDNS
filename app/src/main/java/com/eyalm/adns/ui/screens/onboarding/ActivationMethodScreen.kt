@@ -38,28 +38,6 @@ fun ActivationMethodScreen(
     OnboardingTemplate(
         onBackClick = onBackClick,
         bottomBarContent = {
-            /** Text(
-                text = "Please choose one option.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 16.dp)
-            )
-
-            Button(
-                onClick = { onNextClick(shizukuPressed, adbPressed) },
-                shape = RoundedCornerShape(12.dp),
-                enabled = shizukuPressed || adbPressed
-            ) {
-                Text("Next")
-                Spacer(modifier = Modifier.width(4.dp))
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = "Next",
-                    modifier = Modifier.size(18.dp)
-                )
-            } **/
             StandardBottomBar(
                 message = stringResource(R.string.please_choose_one_option),
                 enabled = shizukuPressed || adbPressed,

@@ -399,6 +399,7 @@ fun GenericListScreen(
                                 selected = row.value.id in activeIds,
                                 canEdit = canEdit,
                                 allowsRemoval = listSetting.allowsCustomInput,
+                                showWebsite = listSetting.apiFeature != "blocklists",
                                 position = when {
                                     previousIsHeader && nextIsHeader -> SegmentPosition.Single
                                     previousIsHeader -> SegmentPosition.First
@@ -425,6 +426,7 @@ private fun ResourceItemRow(
     selected: Boolean,
     canEdit: Boolean,
     allowsRemoval: Boolean,
+    showWebsite: Boolean,
     position: SegmentPosition,
     onToggle: () -> Unit,
     onRemove: () -> Unit,
@@ -447,7 +449,7 @@ private fun ResourceItemRow(
                 )
             },
             supporting = {
-                ResourceMetadata(item)
+                ResourceMetadata(item, showWebsite)
             },
             position = position,
             alignment = Alignment.CenterVertically
@@ -489,7 +491,7 @@ private fun ResourceItemRow(
 }
 
 @Composable
-private fun ResourceMetadata(item: NextDnsResourceItem) {
+private fun ResourceMetadata(item: NextDnsResourceItem, showWebsite: Boolean) {
     val metadata = buildList {
         item.entries?.let { count ->
             add(
@@ -518,7 +520,7 @@ private fun ResourceMetadata(item: NextDnsResourceItem) {
                 )
             )
         }
-        item.website?.let(::add)
+        if (showWebsite) item.website?.let(::add)
     }
     if (metadata.isNotEmpty()) {
         Text(

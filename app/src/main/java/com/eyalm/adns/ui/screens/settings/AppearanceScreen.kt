@@ -44,6 +44,7 @@ fun AppearanceScreen(onBack: () -> Unit) {
                 onClick = { repository.setDarkMode(DarkModePreference.System) },
             )
         }
+        item { Spacer(Modifier.height(4.dp)) }
         item {
             RadioSettingRow(
                 title = stringResource(R.string.theme_light),
@@ -55,6 +56,7 @@ fun AppearanceScreen(onBack: () -> Unit) {
                 onClick = { repository.setDarkMode(DarkModePreference.Light) },
             )
         }
+        item { Spacer(Modifier.height(4.dp)) }
         item {
             RadioSettingRow(
                 title = stringResource(R.string.theme_dark),
@@ -80,6 +82,7 @@ fun AppearanceScreen(onBack: () -> Unit) {
                     onClick = { repository.setColorScheme(ColorSchemePreference.Adns) },
                 )
             }
+            item { Spacer(Modifier.height(4.dp)) }
             item {
                 RadioSettingRow(
                     title = stringResource(R.string.color_scheme_system),

@@ -46,7 +46,7 @@ fun HomeScreen(
     runningTime: String,
     onToggle: () -> Unit,
     controlsEnabled: Boolean = true,
-    server: String = "dns.adguard-dns.com",
+    server: String,
     onEditClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     innerPadding: PaddingValues
@@ -92,7 +92,10 @@ fun HomeScreen(
                         modifier = Modifier.align(Alignment.Top),
                         onClick = onSettingsClick,
                     ) {
-                        Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings")
+                        Icon(
+                            imageVector = Icons.Filled.Settings,
+                            contentDescription = stringResource(R.string.settings),
+                        )
                     }
                 }
 
@@ -109,7 +112,10 @@ fun HomeScreen(
                         modifier = Modifier.align(Alignment.Top),
                         onClick = onEditClick,
                     ) {
-                        Icon(imageVector = Icons.Filled.Edit, contentDescription = "Change DNS Server")
+                        Icon(
+                            imageVector = Icons.Filled.Edit,
+                            contentDescription = stringResource(R.string.change_provider),
+                        )
                     }
                 }
 

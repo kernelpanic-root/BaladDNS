@@ -15,6 +15,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -59,6 +60,8 @@ fun SettingsTabRouter(
     }.state.collectAsState()
     val permissionViewModel: OnboardingViewModel = viewModel()
     val permissionAcquisitionState by permissionViewModel.permissionState.collectAsState()
+
+    val mainListState = rememberLazyListState()
 
     LaunchedEffect(selectedProvider) {
         if (
@@ -120,7 +123,8 @@ fun SettingsTabRouter(
                     onAddQuickTile = { viewModel.addQuickTile() },
                     currentPage = page,
                     onPageChange = viewModel::setPage,
-                    innerPadding = innerPadding
+                    innerPadding = innerPadding,
+                    state = mainListState
                 )
             }
             SettingsViewModel.Page.PROVIDERS -> {

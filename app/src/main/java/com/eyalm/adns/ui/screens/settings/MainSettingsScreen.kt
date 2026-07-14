@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -47,13 +49,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.BuildConfig
@@ -67,8 +69,8 @@ import com.eyalm.adns.ui.components.ExpressiveIcon
 import com.eyalm.adns.ui.components.NavigationSettingRow
 import com.eyalm.adns.ui.components.RadioSettingRow
 import com.eyalm.adns.ui.components.SegmentPosition
-import com.eyalm.adns.ui.components.segmentPosition
 import com.eyalm.adns.ui.components.dialogs.FormDialog
+import com.eyalm.adns.ui.components.segmentPosition
 import com.eyalm.adns.ui.theme.pageTitle
 import com.eyalm.adns.ui.theme.settingsLabel
 import com.eyalm.adns.viewmodel.SettingsViewModel
@@ -83,7 +85,8 @@ fun MainSettingsScreen(
     onAddQuickTile: () -> Unit = {},
     currentPage: Page = Page.MAIN,
     onPageChange: (Page) -> Unit = {},
-    innerPadding: PaddingValues
+    innerPadding: PaddingValues,
+    state: LazyListState = rememberLazyListState(),
 ) {
     val viewModel: SettingsViewModel = viewModel()
     val provider by viewModel.selectedProvider.collectAsState()
@@ -147,6 +150,7 @@ fun MainSettingsScreen(
 
 
         LazyColumn(
+            state = state,
             modifier = Modifier
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp),
@@ -216,13 +220,11 @@ fun MainSettingsScreen(
                     )
                 }
             }
-
-            item {
-                SettingsNavigationGroup(
-                    title = stringResource(R.string.app_settings),
-                    entries = buildList {
-                        add(SettingsNavigationEntry(stringResource(R.string.activation), stringResource(R.string.manage_activation), Icons.Filled.SettingsSuggest, onActivationClick))
-                        if (capabilities.canUseDnsToggleSurfaces) {
+            if (capabilities.canUseDnsToggleSurfaces) {
+                item {
+                    SettingsNavigationGroup(
+                        title = stringResource(R.string.toggling_settings),
+                        entries = buildList {
                             add(
                                 SettingsNavigationEntry(
                                     stringResource(R.string.dns_toggling_mode),
@@ -237,6 +239,16 @@ fun MainSettingsScreen(
                             add(SettingsNavigationEntry(stringResource(R.string.wifi_rules), stringResource(R.string.wifi_rules_enable_description), Icons.Filled.Wifi, onWifiRulesClick))
                             add(SettingsNavigationEntry(stringResource(R.string.add_the_quick_settings_tile), stringResource(R.string.add_the_quick_settings_tile_to_your_device), Icons.Filled.SettingsSuggest, onAddQuickTile))
                         }
+                    )
+                }
+            }
+
+
+            item {
+                SettingsNavigationGroup(
+                    title = stringResource(R.string.app_settings),
+                    entries = buildList {
+                        add(SettingsNavigationEntry(stringResource(R.string.activation), stringResource(R.string.manage_activation), Icons.Filled.SettingsSuggest, onActivationClick))
                         add(SettingsNavigationEntry(stringResource(R.string.language), stringResource(R.string.language_description), Icons.Filled.Language, onLanguagePageClick))
                         add(SettingsNavigationEntry(stringResource(R.string.appearance), stringResource(R.string.appearance_description), Icons.Filled.Palette, onAppearancePageClick))
                     },
@@ -268,7 +280,7 @@ fun MainSettingsScreen(
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_adns_filled),
-                            contentDescription = "App icon",
+                            contentDescription = stringResource(R.string.app_icon),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier
                                 .align(Alignment.CenterHorizontally)
@@ -279,7 +291,7 @@ fun MainSettingsScreen(
                             modifier = Modifier
                                 .align(Alignment.CenterHorizontally)
                                 .padding(top = 12.dp, bottom = 4.dp),
-                            text = "ADNS",
+                            text = stringResource(R.string.app_name),
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface

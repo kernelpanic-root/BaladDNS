@@ -3,7 +3,6 @@ package com.eyalm.adns
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -219,7 +218,7 @@ fun Greeting(
     runningTime: String,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
-    server: String = "dns.adguard-dns.com",
+    server: String,
     onEditClick: () -> Unit = {},
     checkForUpdate: ((String?) -> Unit) -> Unit = {},
     settingsPage: SettingsViewModel.Page = SettingsViewModel.Page.MAIN,
@@ -289,7 +288,6 @@ fun Greeting(
     if (!BuildConfig.IS_FOSS) {
         LaunchedEffect(Unit) {
             checkForUpdate { version ->
-                Log.d("update", "Latest version: $version")
                 latestVersion.value = version
             }
         }
@@ -418,6 +416,7 @@ fun GreetingPreview() {
             isEnabled = true,
             runningTime = "00:05:23",
             onToggle = {},
+            server = "dns.example",
             capabilities = AppCapabilities(
                 canControlPrivateDns = true,
                 canUseDnsToggleSurfaces = true,

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.SettingsSuggest
 import androidx.compose.material3.MaterialTheme
@@ -113,7 +112,7 @@ fun NotificationSettingsScreen(
     SettingsScreenScaffold(
         onBack = onBack,
         title = stringResource(R.string.notification_settings),
-        description = stringResource(R.string.notification_settings_description),
+        description = stringResource(R.string.enable_or_disable_blocker_state_notifications),
     ) {
         item {
             if (

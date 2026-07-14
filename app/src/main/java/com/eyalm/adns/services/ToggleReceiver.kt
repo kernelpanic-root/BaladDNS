@@ -2,7 +2,6 @@ package com.eyalm.adns.services
 
 import android.content.BroadcastReceiver
 import android.content.Intent
-import android.util.Log
 import com.eyalm.adns.MainActivity
 import com.eyalm.adns.data.AppRuntimeRepositories
 import com.eyalm.adns.data.DnsRepository
@@ -15,10 +14,7 @@ import kotlinx.coroutines.launch
 
 class ToggleReceiver : BroadcastReceiver() {
     override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
-        Log.d("ToggleReceiver", "Received broadcast")
-
         if (intent?.action == ACTION_TOGGLE_DNS) {
-            Log.d("ToggleReceiver", "click broadcast")
             val safeContext = context ?: return
             ActivationRepositories.getInstance(safeContext).refreshPermission()
             if (!AppRuntimeRepositories.capabilities(safeContext).current().canUseDnsToggleSurfaces) {

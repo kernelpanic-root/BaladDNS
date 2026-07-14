@@ -410,7 +410,7 @@ fun WifiRulesScreen(
                             },
                             modifier = Modifier.weight(1f),
                             enabled = hasLocationPermission(),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(10.dp)
                         ) {
                             Icon(Icons.Default.Wifi, contentDescription = null)
                             Spacer(modifier = Modifier.width(4.dp))
@@ -420,7 +420,7 @@ fun WifiRulesScreen(
                         OutlinedButton(
                             onClick = { addDialogVisible = true },
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(10.dp)
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null)
                             Spacer(modifier = Modifier.width(4.dp))

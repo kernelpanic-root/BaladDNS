@@ -44,6 +44,7 @@ fun AdbActivationScreen(
     onStopMonitoring: () -> Unit = {},
 ) {
     val clipboardManager = LocalClipboardManager.current
+    val adbCommand = stringResource(R.string.adb_grant_command)
 
     DisposableEffect(Unit) {
         onStartMonitoring()
@@ -87,14 +88,17 @@ fun AdbActivationScreen(
             ) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
                     Text(
-                        text = "adb shell pm grant com.eyalm.adns android.permission.WRITE_SECURE_SETTINGS",
+                        text = adbCommand,
                         fontFamily = FontFamily.Monospace,
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = {
-                        clipboardManager.setText(AnnotatedString("adb shell pm grant com.eyalm.adns android.permission.WRITE_SECURE_SETTINGS"))
+                        clipboardManager.setText(AnnotatedString(adbCommand))
                     }) {
-                        Icon(Icons.Filled.ContentCopy, "copy")
+                        Icon(
+                            Icons.Filled.ContentCopy,
+                            contentDescription = stringResource(R.string.copy_command),
+                        )
                     }
                 }
             }

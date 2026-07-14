@@ -43,7 +43,7 @@ fun mapServerResourceItems(
                 ?: id,
             description = objectValue.stringOrNull("description")
                 ?: recommendedBlocklistString(id, "description"),
-            // website = objectValue.stringOrNull("website"),
+            website = objectValue.stringOrNull("website"),
             entries = objectValue.intOrNull("entries"),
             updatedOn = objectValue.stringOrNull("updatedOn"),
             sourceIndex = index,

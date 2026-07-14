@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -191,7 +192,15 @@ private fun RecreationItemGroup(
 
     NavigationSettingRow( // TODO replace this, should use "selected" color
         title = title,
-        description = if (expanded) null else stringResource(R.string.recreation_time_active_count, enabledCount),
+        description = if (expanded) {
+            null
+        } else {
+            pluralStringResource(
+                R.plurals.recreation_time_active_count,
+                enabledCount,
+                enabledCount,
+            )
+        },
         onClick = { expanded = !expanded },
         trailing = {
             Icon(
