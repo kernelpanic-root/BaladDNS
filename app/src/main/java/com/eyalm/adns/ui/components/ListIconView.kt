@@ -48,6 +48,7 @@ import com.eyalm.adns.data.nextdns.model.ListIcon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.URL
+import kotlin.math.abs
 
 private val imageCache = LruCache<String, ImageBitmap>(50)
 
@@ -94,12 +95,45 @@ fun ListIconView(
                             .clip(CircleShape)
                     )
                 } else {
-                    Icon(
-                        imageVector = Icons.Default.Image,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                        modifier = Modifier.fillMaxSize(0.5f)
-                    )
+                    val fallbackText = remember(icon.url) { decodeDomainFromNextDnsUrl(icon.url) }
+                    if (!fallbackText.isNullOrBlank()) {
+                        val fallbackChar = remember(fallbackText) {
+                            fallbackText
+                                .trimStart { it == '.' || it == '*' }
+                                .firstOrNull()
+                                ?.uppercaseChar()
+                                ?.toString() ?: "?"
+                        }
+                        val colors = listOf(
+                            MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer,
+                            MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer,
+                            MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer,
+                        )
+                        val index = remember(fallbackText) {
+                            abs(fallbackText.hashCode()) % colors.size
+                        }
+                        val (backgroundColor, textColor) = colors[index]
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(color = backgroundColor, shape = CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = fallbackChar,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = textColor
+                            )
+                        }
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Image,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.fillMaxSize(0.5f)
+                        )
+                    }
                 }
             }
             ListIcon.None -> {}
@@ -152,3 +186,20 @@ private val BuiltInListIcon.imageVector
         BuiltInListIcon.SignalCellular -> Icons.Default.SignalCellularAlt
         BuiltInListIcon.Wifi -> Icons.Default.Wifi
     }
+
+private fun decodeDomainFromNextDnsUrl(url: String): String? {
+    try {
+        val prefix = "https://favicons.nextdns.io/hex:"
+        if (!url.startsWith(prefix)) return null
+        val atIndex = url.indexOf('@', startIndex = prefix.length)
+        if (atIndex == -1) return null
+        val hexString = url.substring(prefix.length, atIndex)
+        val bytes = ByteArray(hexString.length / 2)
+        for (i in bytes.indices) {
+            bytes[i] = hexString.substring(i * 2, i * 2 + 2).toInt(16).toByte()
+        }
+        return String(bytes, Charsets.UTF_8)
+    } catch (_: Exception) {
+        return null
+    }
+}
