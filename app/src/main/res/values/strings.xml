@@ -123,7 +123,7 @@
     <string name="provider_settings">PROVIDER SETTINGS</string>
     <string name="providers">Providers</string>
     <string name="queries">%1$s queries</string>
-    <string name="recommended">" (Recommended)"</string>
+    <string name="recommended">"(Recommended)"</string>
     <string name="requires_adb_shell_access_for_advanced_users">Requires ADB shell access. For advanced users.</string>
     <string name="requires_shizuku_or_sui_installed_and_set_up">Requires Shizuku or Sui installed and set up.</string>
     <string name="resolve_cnames_to_their_final_target_for_enhanced_security">Resolve CNAMEs to their final target for enhanced security.</string>

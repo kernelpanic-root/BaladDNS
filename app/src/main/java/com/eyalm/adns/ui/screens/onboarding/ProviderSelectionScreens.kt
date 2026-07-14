@@ -21,9 +21,9 @@ import com.eyalm.adns.data.provider.DnsProviderCatalog
 import com.eyalm.adns.data.provider.DnsProviderSelection
 import com.eyalm.adns.data.provider.PrivateDnsHostname
 import com.eyalm.adns.data.provider.StandardProviderDefinition
+import com.eyalm.adns.ui.components.OnboardingTemplate
 import com.eyalm.adns.ui.components.RadioSettingRow
 import com.eyalm.adns.ui.components.SegmentPosition
-import com.eyalm.adns.ui.components.OnboardingTemplate
 import com.eyalm.adns.ui.components.StandardBottomBar
 import com.eyalm.adns.ui.components.settings.ProviderPresetSelection
 import com.eyalm.adns.ui.components.settings.ProviderSelection
@@ -52,7 +52,6 @@ fun OnboardingProviderScreen(
         onBackClick = onBack,
         bottomBarContent = {
             StandardBottomBar(
-                message = stringResource(R.string.custom_hostname_advanced),
                 buttonText = stringResource(R.string.confirm),
                 enabled = isCustomSelected && normalizedCustom != null,
                 onNextClick = {
@@ -60,6 +59,7 @@ fun OnboardingProviderScreen(
                         onSelected(DnsProviderSelection.Custom(it))
                     }
                 },
+                message = "",
             )
         },
     ) { padding ->
@@ -74,13 +74,7 @@ fun OnboardingProviderScreen(
                 Text(
                     stringResource(R.string.choose_provider),
                     style = MaterialTheme.typography.pageTitle,
-                    modifier = Modifier.padding(top = 16.dp),
-                )
-            }
-            item {
-                Text(
-                    stringResource(R.string.choose_provider_description),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 16.dp),
                 )
             }
             ProviderSelection(
@@ -140,13 +134,12 @@ fun OnboardingPresetScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             item {
                 Text(
                     stringResource(R.string.choose_preset),
                     style = MaterialTheme.typography.pageTitle,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+                    modifier = Modifier.padding(vertical = 20.dp),
                 )
             }
             ProviderPresetSelection(
@@ -187,7 +180,7 @@ fun OnboardingActivationModeScreen(
                 Text(
                     stringResource(R.string.choose_activation_mode),
                     style = MaterialTheme.typography.pageTitle,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+                    modifier = Modifier.padding(vertical = 16.dp),
                 )
             }
             item {
