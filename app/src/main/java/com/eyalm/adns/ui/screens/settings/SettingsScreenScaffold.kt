@@ -3,9 +3,8 @@ package com.eyalm.adns.ui.screens.settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,6 +23,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -35,17 +36,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.eyalm.adns.data.Locales
-import com.eyalm.adns.ui.theme.pageTitle
 import com.eyalm.adns.ui.components.refresh.AdnsPullToRefresh
+import com.eyalm.adns.ui.theme.pageTitle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsCategoryScreenTemplate(
+fun SettingsScreenScaffold(
     onBack: (() -> Unit)?,
     title: String,
+    modifier: Modifier = Modifier,
     description: String = "",
     refreshing: Boolean = false,
     onRefresh: (() -> Unit)? = null,
+    snackbarHostState: SnackbarHostState? = null,
+    floatingActionButton: (@Composable () -> Unit)? = null,
     content: LazyListScope.() -> Unit
 ) {
     val scrollState = rememberLazyListState()
@@ -55,48 +59,23 @@ fun SettingsCategoryScreenTemplate(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    AnimatedVisibility(
-                        visible = showAppBarTitle,
-                        enter = fadeIn(),
-                        exit = fadeOut()
-                    ) {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                },
-                navigationIcon = {
-                    onBack?.let { navigateBack ->
-                        IconButton(onClick = navigateBack) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                Locales.getString("global", "back"),
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
+    SettingsScreenLayout(
+        title = title,
+        onBack = onBack,
+        showAppBarTitle = showAppBarTitle,
+        modifier = modifier,
+        refreshing = refreshing,
+        onRefresh = onRefresh,
+        snackbarHostState = snackbarHostState,
+        floatingActionButton = floatingActionButton,
     ) { innerPadding ->
-
-        val list: @Composable () -> Unit = {
-            LazyColumn(
-                state = scrollState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp)
-            ) {
+        LazyColumn(
+            state = scrollState,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+        ) {
                 item {
                     Text(
                         text = title,
@@ -126,25 +105,74 @@ fun SettingsCategoryScreenTemplate(
                         Spacer(Modifier.height(20.dp))
                     }
                 }
-                content()
-            }
+            content()
+            item { Spacer(Modifier.height(32.dp)) }
         }
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsScreenLayout(
+    title: String,
+    onBack: (() -> Unit)?,
+    showAppBarTitle: Boolean,
+    modifier: Modifier = Modifier,
+    refreshing: Boolean = false,
+    onRefresh: (() -> Unit)? = null,
+    snackbarHostState: SnackbarHostState? = null,
+    floatingActionButton: (@Composable () -> Unit)? = null,
+    content: @Composable (PaddingValues) -> Unit,
+) {
+    val scaffoldContent: @Composable (Modifier) -> Unit = { scaffoldModifier ->
+        Scaffold(
+            modifier = scaffoldModifier,
+            snackbarHost = { snackbarHostState?.let { SnackbarHost(it) } },
+            floatingActionButton = { floatingActionButton?.invoke() },
+            topBar = {
+                TopAppBar(
+                title = {
+                    AnimatedVisibility(
+                        visible = showAppBarTitle,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                },
+                navigationIcon = {
+                    onBack?.let { navigateBack ->
+                        IconButton(onClick = navigateBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                Locales.getString("global", "back"),
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+                )
+            },
+            containerColor = MaterialTheme.colorScheme.background,
+        ) { innerPadding -> content(innerPadding) }
+    }
+
+    if (onRefresh != null) {
+        AdnsPullToRefresh(
+            refreshing = refreshing,
+            onRefresh = onRefresh,
+            modifier = modifier,
         ) {
-            if (onRefresh != null) {
-                AdnsPullToRefresh(
-                    refreshing = refreshing,
-                    onRefresh = onRefresh,
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    list()
-                }
-            } else {
-                list()
-            }
+            scaffoldContent(Modifier.fillMaxSize())
         }
+    } else {
+        scaffoldContent(modifier)
     }
 }

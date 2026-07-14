@@ -20,13 +20,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -36,21 +34,15 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -76,10 +68,13 @@ import com.eyalm.adns.data.nextdns.resources.NextDnsResourceItem
 import com.eyalm.adns.data.nextdns.resources.filterResourceItems
 import com.eyalm.adns.data.nextdns.resources.orderResourceItems
 import com.eyalm.adns.data.nextdns.resources.updatedInstantOrNull
-import com.eyalm.adns.ui.components.refresh.AdnsPullToRefresh
 import com.eyalm.adns.ui.components.ExpressiveIcon
-import com.eyalm.adns.ui.components.ExpressiveListItem
-import com.eyalm.adns.ui.components.dialogs.BaseDialog
+import com.eyalm.adns.ui.components.ListIconView
+import com.eyalm.adns.ui.components.ResourceSettingRow
+import com.eyalm.adns.ui.components.SegmentPosition
+import com.eyalm.adns.ui.components.ToggleSettingRow
+import com.eyalm.adns.ui.components.dialogs.DestructiveConfirmationDialog
+import com.eyalm.adns.ui.components.dialogs.FormDialog
 import com.eyalm.adns.ui.components.settings.LoadingError
 import com.eyalm.adns.ui.theme.pageTitle
 import com.eyalm.adns.ui.theme.settingsLabel
@@ -148,11 +143,10 @@ fun GenericListScreen(
     }
 
     pendingRemoval?.let { domain ->
-        BaseDialog(
+        DestructiveConfirmationDialog(
             title = stringResource(R.string.remove, domain),
             body = stringResource(R.string.remove_list_item_confirmation),
             confirmLabel = Locales.getString("global", "remove"),
-            destructive = true,
             onConfirm = {
                 pendingRemoval = null
                 listViewModel.deleteCustomDomain(domain)
@@ -161,24 +155,13 @@ fun GenericListScreen(
         )
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = {},
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null,
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                ),
-            )
-        },
+    SettingsScreenLayout(
+        title = listSetting.title(context),
+        onBack = onBack,
+        showAppBarTitle = false,
+        refreshing = refreshing,
+        onRefresh = listViewModel::refresh,
+        snackbarHostState = snackbarHostState,
         floatingActionButton = {
             if (listSetting.allowsCustomInput && canEdit) {
                 ExtendedFloatingActionButton(
@@ -188,7 +171,6 @@ fun GenericListScreen(
                 )
             }
         },
-        containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
         if (isLoading && availableItems.isEmpty()) {
             Box(
@@ -249,16 +231,12 @@ fun GenericListScreen(
                 }
             }
 
-            AdnsPullToRefresh(
-                refreshing = refreshing,
-                onRefresh = listViewModel::refresh,
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding),
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp),
             ) {
-                LazyColumn(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                ) {
                 item {
                     Text(
                         text = listSetting.title(context),
@@ -327,12 +305,12 @@ fun GenericListScreen(
                 if (hasListControls && showConfig) {
                     if (listSetting.apiFeature == "blocklists") {
                         item {
-                            ExpressiveListItem(
+                            ResourceSettingRow(
                                 onClick = { sortMenuVisible = true },
                                 title = stringResource(R.string.sort_by),
                                 description = stringResource(R.string.change_blocklist_sort_order),
-                                icon = Icons.AutoMirrored.Filled.Sort,
-                                interactiveItem = { _, _ ->
+                                leading = { ExpressiveIcon(Icons.AutoMirrored.Filled.Sort) },
+                                trailing = {
                                     Box {
                                         FilterChip(
                                             selected = true,
@@ -355,26 +333,30 @@ fun GenericListScreen(
                                         }
                                     }
                                 },
-                                isFirst = true,
+                                position = SegmentPosition.First,
+                                alignment = Alignment.CenterVertically
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                         }
                     }
                     item {
-                        ExpressiveListItem(
-                            onClick = { showEnabledOnly = !showEnabledOnly },
+                        ToggleSettingRow(
                             title = stringResource(R.string.enabled_only),
                             description = stringResource(R.string.show_only_enabled_items),
-                            icon = Icons.Filled.Check,
-                            interactiveItem = { isSelected, onClick ->
+                            checked = showEnabledOnly,
+                            leading = { ExpressiveIcon(Icons.Filled.Check) },
+                            toggle = { checked, onCheckedChange ->
                                 Switch(
-                                    checked = isSelected,
-                                    onCheckedChange = { onClick() },
+                                    checked = checked,
+                                    onCheckedChange = onCheckedChange,
                                 )
                             },
-                            isSelected = showEnabledOnly,
-                            isFirst = listSetting.apiFeature != "blocklists",
-                            isLast = true,
+                            onCheckedChange = { showEnabledOnly = it },
+                            position = if (listSetting.apiFeature == "blocklists") {
+                                SegmentPosition.Last
+                            } else {
+                                SegmentPosition.Single
+                            },
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                     }
@@ -417,8 +399,12 @@ fun GenericListScreen(
                                 selected = row.value.id in activeIds,
                                 canEdit = canEdit,
                                 allowsRemoval = listSetting.allowsCustomInput,
-                                isFirst = previousIsHeader,
-                                isLast = nextIsHeader,
+                                position = when {
+                                    previousIsHeader && nextIsHeader -> SegmentPosition.Single
+                                    previousIsHeader -> SegmentPosition.First
+                                    nextIsHeader -> SegmentPosition.Last
+                                    else -> SegmentPosition.Middle
+                                },
                                 onToggle = { listViewModel.toggle(row.value.id) },
                                 onRemove = { pendingRemoval = row.value.id },
                             )
@@ -428,7 +414,6 @@ fun GenericListScreen(
                 }
 
                     item { Spacer(modifier = Modifier.height(80.dp)) }
-                }
             }
         }
     }
@@ -440,31 +425,32 @@ private fun ResourceItemRow(
     selected: Boolean,
     canEdit: Boolean,
     allowsRemoval: Boolean,
-    isFirst: Boolean,
-    isLast: Boolean,
+    position: SegmentPosition,
     onToggle: () -> Unit,
     onRemove: () -> Unit,
 ) {
     val dismissState = rememberSwipeToDismissBoxState()
     val content: @Composable () -> Unit = {
-        ExpressiveListItem(
+        ResourceSettingRow(
             title = item.name,
             description = item.description,
-            isSelected = selected,
+            selected = selected,
             onClick = { if (canEdit) onToggle() },
-            altIconUrl = (item.icon as? ListIcon.Url)?.url,
-            interactiveItem = { isSelected, onClick ->
+            leading = if (item.icon !is ListIcon.None) {
+                { ListIconView(item.icon, modifier = Modifier.size(36.dp)) } // todo Same story here with 4dp - cortical
+            } else null,
+            trailing = {
                 Checkbox(
-                    checked = isSelected,
+                    checked = selected,
                     enabled = canEdit,
-                    onCheckedChange = { onClick() },
+                    onCheckedChange = { if (canEdit) onToggle() },
                 )
             },
-            altContent = {
+            supporting = {
                 ResourceMetadata(item)
             },
-            isFirst = isFirst,
-            isLast = isLast,
+            position = position,
+            alignment = Alignment.CenterVertically
         )
     }
 
@@ -563,40 +549,28 @@ fun AddDialog(
     var domain by remember { mutableStateOf("") }
     val valid = domain.isNotBlank() && Patterns.DOMAIN_NAME.matcher(domain).matches()
 
-    AlertDialog(
-        icon = { Icon(imageVector = Icons.Default.Add, contentDescription = null) },
-        title = { Text(text = stringResource(R.string.add_item)) },
-        text = {
-            OutlinedTextField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                value = domain,
-                placeholder = { Text(stringResource(R.string.enter_a_domain)) },
-                singleLine = true,
-                onValueChange = { domain = it },
-                isError = domain.isNotEmpty() && !valid,
-                supportingText = {
-                    if (domain.isNotEmpty() && !valid) {
-                        Text(stringResource(R.string.invalid_domain))
-                    }
-                },
-                shape = RoundedCornerShape(12.dp),
-            )
-        },
-        onDismissRequest = onDismissRequest,
-        confirmButton = {
-            TextButton(
-                onClick = { if (valid) onConfirmation(domain) },
-                enabled = valid,
-            ) {
-                Text(stringResource(R.string.confirm))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismissRequest) {
-                Text(stringResource(R.string.dismiss))
-            }
-        },
-    )
+    FormDialog(
+        title = stringResource(R.string.add_item),
+        confirmLabel = stringResource(R.string.confirm),
+        confirmEnabled = valid,
+        onConfirm = { if (valid) onConfirmation(domain) },
+        onDismiss = onDismissRequest,
+    ) {
+        OutlinedTextField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            value = domain,
+            placeholder = { Text(stringResource(R.string.enter_a_domain)) },
+            singleLine = true,
+            onValueChange = { domain = it },
+            isError = domain.isNotEmpty() && !valid,
+            supportingText = {
+                if (domain.isNotEmpty() && !valid) {
+                    Text(stringResource(R.string.invalid_domain))
+                }
+            },
+            shape = RoundedCornerShape(12.dp),
+        )
+    }
 }

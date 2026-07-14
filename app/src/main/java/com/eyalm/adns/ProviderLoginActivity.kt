@@ -1,10 +1,10 @@
 package com.eyalm.adns
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.SizeTransform
@@ -24,6 +24,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.ui.screens.providerLogin.Login
+import com.eyalm.adns.data.Locales
+import com.eyalm.adns.data.localization.AppLocaleRepository
 import com.eyalm.adns.ui.screens.providerLogin.ProfileOptionPage
 import com.eyalm.adns.ui.screens.providerLogin.SuccessLoginScreen
 import com.eyalm.adns.ui.theme.AdnsTheme
@@ -31,27 +33,12 @@ import com.eyalm.adns.viewmodel.ProviderLoginViewModel
 import com.eyalm.adns.viewmodel.ProviderLoginResult
 import com.eyalm.adns.viewmodel.ProviderLoginStep
 
-class ProviderLoginActivity : ComponentActivity() {
-    private var lastAppliedLang: String? = null
-
-    override fun attachBaseContext(newBase: android.content.Context) {
-        super.attachBaseContext(com.eyalm.adns.data.LocaleHelper.onAttach(newBase))
-    }
-
-    override fun onResume() {
-        super.onResume()
-        val savedLang = com.eyalm.adns.data.LocaleHelper.getLanguage(this)
-        if (lastAppliedLang != null && lastAppliedLang != savedLang) {
-            recreate()
-        }
-    }
-
+class ProviderLoginActivity : AppCompatActivity() {
 
     @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
-        com.eyalm.adns.data.LocaleHelper.applyLocale(this)
-        lastAppliedLang = com.eyalm.adns.data.LocaleHelper.getLanguage(this)
         super.onCreate(savedInstanceState)
+        Locales.sync(this, AppLocaleRepository(this).selectedTag())
         enableEdgeToEdge()
 
 

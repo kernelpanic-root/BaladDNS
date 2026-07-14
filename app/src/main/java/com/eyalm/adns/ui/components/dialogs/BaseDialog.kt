@@ -22,14 +22,14 @@ import com.eyalm.adns.data.Locales
 @Composable
 fun BaseDialog(
     title: String,
-    body: String? = null,
     confirmLabel: String,
     destructive: Boolean,
+    modifier: Modifier = Modifier,
+    body: String? = null,
     submitting: Boolean = false,
     confirmEnabled: Boolean = true,
     errorMessage: String? = null,
     backgroundColor: Color = MaterialTheme.colorScheme.background,
-    modifier: Modifier = Modifier,
     properties: DialogProperties = DialogProperties(),
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
@@ -93,3 +93,91 @@ fun BaseDialog(
         },
     )
 }
+
+@Composable
+fun InformationDialog(
+    title: String,
+    body: String,
+    confirmLabel: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) = BaseDialog(
+    title = title,
+    body = body,
+    confirmLabel = confirmLabel,
+    destructive = false,
+    onConfirm = onConfirm,
+    onDismiss = onDismiss,
+)
+
+@Composable
+fun ConfirmationDialog(
+    title: String,
+    body: String? = null,
+    confirmLabel: String,
+    submitting: Boolean = false,
+    confirmEnabled: Boolean = true,
+    errorMessage: String? = null,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) = BaseDialog(
+    title = title,
+    body = body,
+    confirmLabel = confirmLabel,
+    destructive = false,
+    submitting = submitting,
+    confirmEnabled = confirmEnabled,
+    errorMessage = errorMessage,
+    onConfirm = onConfirm,
+    onDismiss = onDismiss,
+)
+
+@Composable
+fun DestructiveConfirmationDialog(
+    title: String,
+    body: String? = null,
+    confirmLabel: String,
+    submitting: Boolean = false,
+    confirmEnabled: Boolean = true,
+    errorMessage: String? = null,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) = BaseDialog(
+    title = title,
+    body = body,
+    confirmLabel = confirmLabel,
+    destructive = true,
+    submitting = submitting,
+    confirmEnabled = confirmEnabled,
+    errorMessage = errorMessage,
+    onConfirm = onConfirm,
+    onDismiss = onDismiss,
+)
+
+@Composable
+fun FormDialog(
+    title: String,
+    confirmLabel: String,
+    modifier: Modifier = Modifier,
+    body: String? = null,
+    submitting: Boolean = false,
+    confirmEnabled: Boolean = true,
+    errorMessage: String? = null,
+    properties: DialogProperties = DialogProperties(),
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) = BaseDialog(
+    title = title,
+    body = body,
+    confirmLabel = confirmLabel,
+    destructive = false,
+    submitting = submitting,
+    confirmEnabled = confirmEnabled,
+    errorMessage = errorMessage,
+    modifier = modifier,
+    properties = properties,
+    onConfirm = onConfirm,
+    onDismiss = onDismiss,
+    content = content,
+)

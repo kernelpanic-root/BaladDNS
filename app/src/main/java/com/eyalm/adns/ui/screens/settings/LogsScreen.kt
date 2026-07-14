@@ -64,13 +64,17 @@ import com.eyalm.adns.R
 import com.eyalm.adns.data.nextdns.logs.DomainRuleList
 import com.eyalm.adns.data.nextdns.model.ListIcon
 import com.eyalm.adns.data.nextdns.model.nextDnsFaviconUrl
+import com.eyalm.adns.ui.components.ExpandableResourceSettingRow
 import com.eyalm.adns.ui.components.ExpressiveIcon
-import com.eyalm.adns.ui.components.ExpressiveListItem
 import com.eyalm.adns.ui.components.ListIconView
+import com.eyalm.adns.ui.components.NavigationSettingRow
+import com.eyalm.adns.ui.components.SegmentPosition
+import com.eyalm.adns.ui.components.ToggleSettingRow
+import com.eyalm.adns.ui.components.segmentPosition
+import com.eyalm.adns.viewmodel.ProfileSessionState
 import com.eyalm.adns.viewmodel.nextdns.LogsEffect
 import com.eyalm.adns.viewmodel.nextdns.LogsViewModel
 import com.eyalm.adns.viewmodel.nextdns.PendingLogAction
-import com.eyalm.adns.viewmodel.ProfileSessionState
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -117,7 +121,7 @@ fun LogsScreen(
         }
     }
 
-    SettingsCategoryScreenTemplate(
+    SettingsScreenScaffold(
         onBack = onBack,
         title = stringResource(R.string.logs),
         refreshing = state.refreshing,
@@ -171,37 +175,36 @@ fun LogsScreen(
             if (showConfig) {
                 item {
                     Spacer(Modifier.height(8.dp))
-                    ExpressiveListItem(
-                        onClick = { viewModel.setBlocked(!state.query.blockedOnly) },
+                    ToggleSettingRow(
                         title = stringResource(R.string.blocked_only),
                         description = stringResource(R.string.show_only_blocked_items),
-                        icon = Icons.Filled.Block,
-                        interactiveItem = { isSelected, onClick ->
+                        checked = state.query.blockedOnly,
+                        leading = { ExpressiveIcon(Icons.Filled.Block) },
+                        toggle = { checked, onCheckedChange ->
                             Switch(
-                                checked = isSelected,
-                                onCheckedChange = { onClick() }
+                                checked = checked,
+                                onCheckedChange = onCheckedChange,
                             )
                         },
-                        isSelected = state.query.blockedOnly,
-                        isFirst = true,
+                        onCheckedChange = viewModel::setBlocked,
+                        position = SegmentPosition.First,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                 }
                 item {
-                    ExpressiveListItem(
-                        onClick = {
-                            viewModel.setRaw(!state.query.raw)
-                        },
+                    ToggleSettingRow(
                         title = stringResource(R.string.raw_mode),
                         description = stringResource(R.string.show_raw_dns_logs),
-                        icon = Icons.Filled.RawOn,
-                        interactiveItem = { isSelected, onClick ->
+                        checked = state.query.raw,
+                        leading = { ExpressiveIcon(Icons.Filled.RawOn) },
+                        toggle = { checked, onCheckedChange ->
                             Switch(
-                                checked = isSelected,
-                                onCheckedChange = { onClick() }
+                                checked = checked,
+                                onCheckedChange = onCheckedChange,
                             )
                         },
-                        isSelected = state.query.raw,
+                        onCheckedChange = viewModel::setRaw,
+                        position = SegmentPosition.Middle,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                 }
@@ -213,14 +216,14 @@ fun LogsScreen(
                         else -> devices.find { it.id == state.query.deviceId }?.name ?: state.query.deviceId!!
                     }
 
-                    ExpressiveListItem(
+                    NavigationSettingRow(
                         onClick = {
                             expanded = true
                         },
                         title = selectedDeviceName,
                         description = stringResource(R.string.filter_the_logs_to_a_certain_device),
-                        icon = Icons.Filled.Devices,
-                        interactiveItem = { _, _ ->
+                        leading = { ExpressiveIcon(Icons.Filled.Devices) },
+                        trailing = {
                             Box(
                                 modifier = Modifier
                                     .wrapContentSize(Alignment.TopEnd)
@@ -259,7 +262,7 @@ fun LogsScreen(
                                 }
                             }
                         },
-                        isLast = true
+                        position = SegmentPosition.Last,
                     )
                 }
             }
@@ -300,11 +303,13 @@ fun LogsScreen(
                             viewModel.fetchNextPage()
                         }
                     }
-                    ExpressiveListItem(
+                    ExpandableResourceSettingRow(
                         title = log.domain,
                         onClick = { expandedId = if (expandedId == index) null else index },
+                        expanded = expandedId == index,
+                        selected = false,
                         indicatorColor = if (log.status == "blocked") MaterialTheme.colorScheme.error else null,
-                        altLeadingContent = {
+                        leading = {
                             ListIconView(
                                 icon = nextDnsFaviconUrl(log.domain)
                                     ?.let(ListIcon::Url)
@@ -312,134 +317,129 @@ fun LogsScreen(
                                 modifier = Modifier.size(24.dp)
                             )
                         },
-                        isFirst = index == 0,
-                        isLast = index == items.lastIndex,
-                        altContent = {
-                            if (expandedId == index) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                        position = segmentPosition(index, items.size),
+                        content = {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                //    .padding(vertical = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                log.device?.let { dev ->
+                                    val devName = dev.name ?: ""
+                                    val devModel = dev.model?.let { " ($it)" } ?: ""
+                                    if (devName.isNotEmpty() || devModel.isNotEmpty()) {
+                                        DetailRow(label = stringResource(R.string.device), value = "$devName$devModel")
+                                    }
+                                }
+
+                                DetailRow(
+                                    label = stringResource(R.string.time),
+                                    value = formatLogTimestamp(log.timestamp),
+                                )
+
+                                val encryptionStr = if (log.encrypted) stringResource(R.string.encrypted) else stringResource(
+                                    R.string.unencrypted
+                                )
+                                DetailRow(
+                                    label = stringResource(R.string.protocol),
+                                    value = "${log.protocol} · $encryptionStr",
+                                )
+
+                                log.clientIp?.let { ip ->
+                                    DetailRow(label = stringResource(R.string.client_ip), value = ip)
+                                }
+
+                                if (state.query.raw) {
+                                    log.type?.let {
+                                        DetailRow(label = stringResource(R.string.type), value = it)
+
+                                    }
+                                }
+                                if (log.status == "blocked" && log.reasons.isNotEmpty()) {
+                                    val reasonsStr = log.reasons.joinToString(", ") { it.name }
+                                    DetailRow(label = stringResource(R.string.blocked_by), value = reasonsStr, isErrorColor = true)
+                                }
+
+                                Spacer(Modifier.height(8.dp))
+
+
+                                val canEdit = profileState.capabilities.canEditSettings
+                                val actionLabels = buildList {
+                                    if (canEdit) {
+                                        add(stringResource(R.string.allow))
+                                        add(stringResource(R.string.deny))
+                                    }
+                                    add(stringResource(R.string.copy))
+                                }
+                                val actionIcons = buildList {
+                                    if (canEdit) {
+                                        add(Icons.Filled.Check)
+                                        add(Icons.Filled.Block)
+                                    }
+                                    add(Icons.Filled.CopyAll)
+                                }
+                                val actionRules = buildList {
+                                    if (canEdit) {
+                                        add(DomainRuleList.Allow)
+                                        add(DomainRuleList.Deny)
+                                    }
+                                    add(null)
+                                }
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
-                                    log.device?.let { dev ->
-                                        val devName = dev.name ?: ""
-                                        val devModel = dev.model?.let { " ($it)" } ?: ""
-                                        if (devName.isNotEmpty() || devModel.isNotEmpty()) {
-                                            DetailRow(label = stringResource(R.string.device), value = "$devName$devModel")
+                                    actionLabels.forEachIndexed { index, label ->
+                                        val shapes = when (index) {
+                                            0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                                            actionLabels.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                                            else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
                                         }
-                                    }
+                                        val rule = actionRules[index]
+                                        val pending = rule?.let {
+                                            PendingLogAction(log.domain, it) in state.pendingActions
+                                        } ?: false
 
-                                    DetailRow(
-                                        label = stringResource(R.string.time),
-                                        value = formatLogTimestamp(log.timestamp),
-                                    )
-
-                                    val encryptionStr = if (log.encrypted) stringResource(R.string.encrypted) else stringResource(
-                                        R.string.unencrypted
-                                    )
-                                    DetailRow(
-                                        label = stringResource(R.string.protocol),
-                                        value = "${log.protocol} · $encryptionStr",
-                                    )
-
-                                    log.clientIp?.let { ip ->
-                                        DetailRow(label = stringResource(R.string.client_ip), value = ip)
-                                    }
-
-                                    if (state.query.raw) {
-                                        log.type?.let {
-                                            DetailRow(label = stringResource(R.string.type), value = it)
-
-                                        }
-                                    }
-                                    if (log.status == "blocked" && log.reasons.isNotEmpty()) {
-                                        val reasonsStr = log.reasons.joinToString(", ") { it.name }
-                                        DetailRow(label = stringResource(R.string.blocked_by), value = reasonsStr, isErrorColor = true)
-                                    }
-
-                                    Spacer(Modifier.height(8.dp))
-
-
-                                    val canEdit = profileState.capabilities.canEditSettings
-                                    val actionLabels = buildList {
-                                        if (canEdit) {
-                                            add(stringResource(R.string.allow))
-                                            add(stringResource(R.string.deny))
-                                        }
-                                        add(stringResource(R.string.copy))
-                                    }
-                                    val actionIcons = buildList {
-                                        if (canEdit) {
-                                            add(Icons.Filled.Check)
-                                            add(Icons.Filled.Block)
-                                        }
-                                        add(Icons.Filled.CopyAll)
-                                    }
-                                    val actionRules = buildList {
-                                        if (canEdit) {
-                                            add(DomainRuleList.Allow)
-                                            add(DomainRuleList.Deny)
-                                        }
-                                        add(null)
-                                    }
-
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                                    ) {
-                                        actionLabels.forEachIndexed { index, label ->
-                                            val shapes = when (index) {
-                                                0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                                                actionLabels.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                                                else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-                                            }
-                                            val rule = actionRules[index]
-                                            val pending = rule?.let {
-                                                PendingLogAction(log.domain, it) in state.pendingActions
-                                            } ?: false
-
-                                            ToggleButton(
-                                                checked = true,
-                                                onCheckedChange = {
-                                                    if (rule != null) {
-                                                        viewModel.applyRule(
-                                                            rule,
-                                                            log.domain,
-                                                            canEdit = true,
-                                                        )
-                                                    } else {
-                                                        viewModel.copyDomain(log.domain)
-                                                    }
-                                                },
-                                                enabled = !pending,
-                                                modifier = Modifier.weight(1f),
-                                                shapes = shapes.copy(checkedShape = shapes.shape),
-                                                colors = ToggleButtonDefaults.toggleButtonColors(
-                                                    checkedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                                    checkedContentColor = MaterialTheme.colorScheme.onSurface
-                                                )
-                                            ) {
-                                                if (pending) {
-                                                    CircularProgressIndicator(
-                                                        modifier = Modifier.size(18.dp),
-                                                        strokeWidth = 2.dp,
+                                        ToggleButton(
+                                            checked = true,
+                                            onCheckedChange = {
+                                                if (rule != null) {
+                                                    viewModel.applyRule(
+                                                        rule,
+                                                        log.domain,
+                                                        canEdit = true,
                                                     )
                                                 } else {
-                                                    Icon(actionIcons[index], contentDescription = null)
+                                                    viewModel.copyDomain(log.domain)
                                                 }
-                                                Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
-                                                Text(label)
+                                            },
+                                            enabled = !pending,
+                                            modifier = Modifier.weight(1f),
+                                            shapes = shapes.copy(checkedShape = shapes.shape),
+                                            colors = ToggleButtonDefaults.toggleButtonColors(
+                                                checkedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                                checkedContentColor = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        ) {
+                                            if (pending) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(18.dp),
+                                                    strokeWidth = 2.dp,
+                                                )
+                                            } else {
+                                                Icon(actionIcons[index], contentDescription = null)
                                             }
+                                            Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
+                                            Text(label)
                                         }
                                     }
-
                                 }
+
                             }
                         },
-                        stickIcon = true,
-                        iconSize = 24.dp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                 }

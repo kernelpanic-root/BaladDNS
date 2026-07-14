@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.FamilyRestroom
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.SettingsSuggest
@@ -36,6 +37,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -51,6 +53,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.BuildConfig
@@ -60,8 +63,12 @@ import com.eyalm.adns.data.dns.DnsDisableBehavior
 import com.eyalm.adns.data.nextdns.resources.NextDnsResourceRegistry
 import com.eyalm.adns.data.provider.DnsProviderCatalog
 import com.eyalm.adns.data.provider.DnsProviderSelection
-import com.eyalm.adns.ui.components.ExpressiveListItem
-import com.eyalm.adns.ui.components.dialogs.BaseDialog
+import com.eyalm.adns.ui.components.ExpressiveIcon
+import com.eyalm.adns.ui.components.NavigationSettingRow
+import com.eyalm.adns.ui.components.RadioSettingRow
+import com.eyalm.adns.ui.components.SegmentPosition
+import com.eyalm.adns.ui.components.segmentPosition
+import com.eyalm.adns.ui.components.dialogs.FormDialog
 import com.eyalm.adns.ui.theme.pageTitle
 import com.eyalm.adns.ui.theme.settingsLabel
 import com.eyalm.adns.viewmodel.SettingsViewModel
@@ -91,30 +98,31 @@ fun MainSettingsScreen(
     }
 
     if (disableBehaviorDialogVisible) {
-        BaseDialog(
+        FormDialog(
             title = stringResource(R.string.dns_toggling_mode),
             confirmLabel = stringResource(R.string.confirm),
-            destructive = false,
             onConfirm = {
                 viewModel.setDisableBehavior(pendingDisableBehavior)
                 disableBehaviorDialogVisible = false
             },
             onDismiss = { disableBehaviorDialogVisible = false },
         ) {
-            ExpressiveListItem(
+            RadioSettingRow(
                 title = stringResource(R.string.dns_disable_off),
                 description = stringResource(R.string.dns_disable_off_description),
-                isSelected = pendingDisableBehavior == DnsDisableBehavior.Off,
+                selected = pendingDisableBehavior == DnsDisableBehavior.Off,
                 onClick = { pendingDisableBehavior = DnsDisableBehavior.Off },
-                isFirst = true,
+                position = SegmentPosition.First,
+                radio = { selected, onClick -> RadioButton(selected, onClick) },
             )
             Spacer(Modifier.height(4.dp))
-            ExpressiveListItem(
+            RadioSettingRow(
                 title = stringResource(R.string.dns_disable_automatic),
                 description = stringResource(R.string.dns_disable_automatic_description),
-                isSelected = pendingDisableBehavior == DnsDisableBehavior.Automatic,
+                selected = pendingDisableBehavior == DnsDisableBehavior.Automatic,
                 onClick = { pendingDisableBehavior = DnsDisableBehavior.Automatic },
-                isLast = true,
+                position = SegmentPosition.Last,
+                radio = { selected, onClick -> RadioButton(selected, onClick) },
             )
         }
     }
@@ -134,6 +142,7 @@ fun MainSettingsScreen(
     val onParentalControlClick = remember(onPageChange) { { onPageChange(Page.PARENTAL_CONTROL) } }
     val onSettingsPageClick = remember(onPageChange) { { onPageChange(Page.SETTINGS_PAGE) } }
     val onLanguagePageClick = remember(onPageChange) { { onPageChange(Page.LANGUAGE) } }
+    val onAppearancePageClick = remember(onPageChange) { { onPageChange(Page.APPEARANCE) } }
     val onLogsClick =   remember(onPageChange) { { onPageChange(Page.LOGS)} }
 
 
@@ -157,190 +166,81 @@ fun MainSettingsScreen(
             }
 
             item {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.provider_settings),
-                        style = MaterialTheme.typography.settingsLabel,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
-                    )
-                    ExpressiveListItem(
-                        onClick = onProvidersClick,
-                        title = stringResource(R.string.change_provider),
-                        description = stringResource(R.string.change_the_provider_to_use),
-                        icon = Icons.Filled.BroadcastOnPersonal,
-                        secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        isFirst = true,
-                        isLast = !isNextDns,
-                    )
-                    if (isNextDns) {
-                        ExpressiveListItem(
-                            onClick = onAccountSettingsClick,
-                            icon = Icons.Filled.AccountCircle,
-                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                             title = stringResource(R.string.settings_1, stringResource(providerNameRes)),
-                             description = stringResource(R.string.change_account_settings_for, stringResource(providerNameRes)),
-                             isLast = true,
+                SettingsNavigationGroup(
+                    title = stringResource(R.string.provider_settings),
+                    entries = buildList {
+                        add(
+                            SettingsNavigationEntry(
+                                title = stringResource(R.string.change_provider),
+                                description = stringResource(R.string.change_the_provider_to_use),
+                                icon = Icons.Filled.BroadcastOnPersonal,
+                                onClick = onProvidersClick,
+                            ),
                         )
-                        /*
-                        ExpressiveListItem(
-                            onClick = onBlocklistsClick,
-                            icon = Icons.Filled.FilterList,
-                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            title = "${provider.name} Blocklists",
-                            description = "Change blocklists for ${provider.name}",
-                        )
-                         */
-                    }
-                }
+                        if (isNextDns) {
+                            add(
+                                SettingsNavigationEntry(
+                                    title = stringResource(
+                                        R.string.settings_1,
+                                        stringResource(providerNameRes),
+                                    ),
+                                    description = stringResource(
+                                        R.string.change_account_settings_for,
+                                        stringResource(providerNameRes),
+                                    ),
+                                    icon = Icons.Filled.AccountCircle,
+                                    onClick = onAccountSettingsClick,
+                                ),
+                            )
+                        }
+                    },
+                )
             }
 
 
 
             if (isNextDns) {
                 item {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.nextdns_profile_settings),
-                            style = MaterialTheme.typography.settingsLabel,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
-                        )
-                        ExpressiveListItem(
-                            title = stringResource(R.string.setup_another_device),
-                            description = stringResource(R.string.setup_nextdns_on_another_device),
-                            onClick = onSetupClick,
-                            icon = Icons.Filled.Devices,
-                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            isFirst = true,
-                        )
-                        ExpressiveListItem(
-                            title = stringResource(R.string.security),
-                            description = stringResource(R.string.threat_protection_dns_rebinding_tlds),
-                            onClick = onSecurityClick,
-                            icon = Icons.Filled.Security,
-                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        )
-                        ExpressiveListItem(
-                            title = stringResource(R.string.privacy),
-                            description = stringResource(R.string.blocklists_trackers_affiliate_links),
-                            onClick = onPrivacyClick,
-                            icon = Icons.Filled.PrivacyTip,
-                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        )
-                        ExpressiveListItem(
-                            title = stringResource(R.string.parental_control),
-                            description = stringResource(R.string.safesearch_blocked_apps_categories),
-                            onClick = onParentalControlClick,
-                            icon = Icons.Filled.FamilyRestroom,
-                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        )
-                        ExpressiveListItem(
-                            title = stringResource(R.string.allowlist),
-                            description = stringResource(R.string.add_specific_domains_to_the_allowlist),
-                            onClick = onAllowlistClick,
-                            icon = Icons.Filled.Check,
-                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        )
-                        ExpressiveListItem(
-                            title = stringResource(R.string.denylist),
-                            description = stringResource(R.string.add_specific_domains_to_the_denylist),
-                            onClick = onDenylistClick,
-                            icon = Icons.Filled.Block,
-                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        )
-                        ExpressiveListItem(
-                            title = stringResource(R.string.logs),
-                            description = stringResource(R.string.view_your_dns_logs),
-                            onClick = onLogsClick,
-                            icon = Icons.AutoMirrored.Filled.List,
-                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            )
-                        ExpressiveListItem(
-                            title = stringResource(R.string.general_profile_settings),
-                            description = stringResource(R.string.logs_performance_block_page),
-                            onClick = onSettingsPageClick,
-                            icon = Icons.Filled.Tune,
-                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            isLast = true
-                        )
-                    }
+                    SettingsNavigationGroup(
+                        title = stringResource(R.string.nextdns_profile_settings),
+                        entries = listOf(
+                            SettingsNavigationEntry(stringResource(R.string.setup_another_device), stringResource(R.string.setup_nextdns_on_another_device), Icons.Filled.Devices, onSetupClick),
+                            SettingsNavigationEntry(stringResource(R.string.security), stringResource(R.string.threat_protection_dns_rebinding_tlds), Icons.Filled.Security, onSecurityClick),
+                            SettingsNavigationEntry(stringResource(R.string.privacy), stringResource(R.string.blocklists_trackers_affiliate_links), Icons.Filled.PrivacyTip, onPrivacyClick),
+                            SettingsNavigationEntry(stringResource(R.string.parental_control), stringResource(R.string.safesearch_blocked_apps_categories), Icons.Filled.FamilyRestroom, onParentalControlClick),
+                            SettingsNavigationEntry(stringResource(R.string.allowlist), stringResource(R.string.add_specific_domains_to_the_allowlist), Icons.Filled.Check, onAllowlistClick),
+                            SettingsNavigationEntry(stringResource(R.string.denylist), stringResource(R.string.add_specific_domains_to_the_denylist), Icons.Filled.Block, onDenylistClick),
+                            SettingsNavigationEntry(stringResource(R.string.logs), stringResource(R.string.view_your_dns_logs), Icons.AutoMirrored.Filled.List, onLogsClick),
+                            SettingsNavigationEntry(stringResource(R.string.general_profile_settings), stringResource(R.string.logs_performance_block_page), Icons.Filled.Tune, onSettingsPageClick),
+                        ),
+                    )
                 }
             }
 
             item {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.app_settings),
-                        style = MaterialTheme.typography.settingsLabel,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
-                    )
-                    ExpressiveListItem(
-                        onClick = onActivationClick,
-                        icon = Icons.Filled.SettingsSuggest,
-                        secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        title = stringResource(R.string.activation),
-                        description = stringResource(R.string.manage_activation),
-                        isFirst = true,
-                    )
-                    if (capabilities.canUseDnsToggleSurfaces) {
-                        ExpressiveListItem(
-                            title = stringResource(R.string.dns_toggling_mode),
-                            description = stringResource(
-                                if (disableBehavior == DnsDisableBehavior.Off) {
-                                    R.string.dns_disable_off
-                                } else {
-                                    R.string.dns_disable_automatic
-                                }
-                            ),
-                            icon = Icons.Filled.Tune,
-                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            onClick = {
-                                pendingDisableBehavior = disableBehavior
-                                disableBehaviorDialogVisible = true
-                            },
-                        )
-                        ExpressiveListItem(
-                            onClick = onNotificationSettingsClick,
-                            title = stringResource(R.string.state_notifications),
-                            description = stringResource(R.string.enable_or_disable_blocker_state_notifications),
-                            icon = Icons.Filled.Notifications,
-                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        )
-                        ExpressiveListItem(
-                            onClick = onWifiRulesClick,
-                            title = stringResource(R.string.wifi_rules),
-                            description = stringResource(R.string.wifi_rules_enable_description),
-                            icon = Icons.Filled.Wifi,
-                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        )
-                        ExpressiveListItem(
-                            onClick = onAddQuickTile,
-                            title = stringResource(R.string.add_the_quick_settings_tile),
-                            description = stringResource(R.string.add_the_quick_settings_tile_to_your_device),
-                            icon = Icons.Filled.SettingsSuggest,
-                            secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight
-                        )
-                    }
-                    ExpressiveListItem(
-                        onClick = onLanguagePageClick,
-                        title = stringResource(R.string.language),
-                        description = stringResource(R.string.language_description),
-                        icon = Icons.Filled.Language,
-                        secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        isLast = true,
-                    )
-                }
+                SettingsNavigationGroup(
+                    title = stringResource(R.string.app_settings),
+                    entries = buildList {
+                        add(SettingsNavigationEntry(stringResource(R.string.activation), stringResource(R.string.manage_activation), Icons.Filled.SettingsSuggest, onActivationClick))
+                        if (capabilities.canUseDnsToggleSurfaces) {
+                            add(
+                                SettingsNavigationEntry(
+                                    stringResource(R.string.dns_toggling_mode),
+                                    stringResource(if (disableBehavior == DnsDisableBehavior.Off) R.string.dns_disable_off else R.string.dns_disable_automatic),
+                                    Icons.Filled.Tune,
+                                ) {
+                                    pendingDisableBehavior = disableBehavior
+                                    disableBehaviorDialogVisible = true
+                                },
+                            )
+                            add(SettingsNavigationEntry(stringResource(R.string.state_notifications), stringResource(R.string.enable_or_disable_blocker_state_notifications), Icons.Filled.Notifications, onNotificationSettingsClick))
+                            add(SettingsNavigationEntry(stringResource(R.string.wifi_rules), stringResource(R.string.wifi_rules_enable_description), Icons.Filled.Wifi, onWifiRulesClick))
+                            add(SettingsNavigationEntry(stringResource(R.string.add_the_quick_settings_tile), stringResource(R.string.add_the_quick_settings_tile_to_your_device), Icons.Filled.SettingsSuggest, onAddQuickTile))
+                        }
+                        add(SettingsNavigationEntry(stringResource(R.string.language), stringResource(R.string.language_description), Icons.Filled.Language, onLanguagePageClick))
+                        add(SettingsNavigationEntry(stringResource(R.string.appearance), stringResource(R.string.appearance_description), Icons.Filled.Palette, onAppearancePageClick))
+                    },
+                )
             }
 
 
@@ -397,4 +297,44 @@ fun MainSettingsScreen(
             }
         }
 
+}
+
+private data class SettingsNavigationEntry(
+    val title: String,
+    val description: String,
+    val icon: ImageVector,
+    val onClick: () -> Unit,
+)
+
+@Composable
+private fun SettingsNavigationGroup(
+    title: String,
+    entries: List<SettingsNavigationEntry>,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.settingsLabel,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 8.dp, bottom = 8.dp),
+        )
+        entries.forEachIndexed { index, entry ->
+            NavigationSettingRow(
+                title = entry.title,
+                description = entry.description,
+                position = segmentPosition(index, entries.size),
+                leading = { ExpressiveIcon(entry.icon, Modifier.size(36.dp)) },
+                trailing = {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                    )
+                },
+                onClick = entry.onClick,
+            )
+        }
+    }
 }

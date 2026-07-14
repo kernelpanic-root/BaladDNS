@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.eyalm.adns.ui.components.DnsSwitch
+import com.eyalm.adns.ui.components.dialogs.InformationDialog
 import com.eyalm.adns.ui.theme.AdnsTheme
 import com.eyalm.adns.ui.theme.pageTitle
 
@@ -138,44 +139,24 @@ fun UpdateDialog(
     onClose: () -> Unit = {},
 ) {
     val context = LocalContext.current
-    AlertDialog(
-        icon = {
-            Icon(imageVector = Icons.Filled.Update, contentDescription = "Update Icon")
-        },
-        title = {
-            Text(text = stringResource(R.string.new_update))
-        },
-        text = {
-            Text(text = stringResource(R.string.version_v_is_available_would_you_like_to_download_it, version))
-        },
-        onDismissRequest = {
+    InformationDialog(
+        title = stringResource(R.string.new_update),
+        body = stringResource(
+            R.string.version_v_is_available_would_you_like_to_download_it,
+            version,
+        ),
+        confirmLabel = stringResource(R.string.download),
+        onConfirm = {
+            val url = "https://github.com/eyalm2000/adns/releases"
+            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+            try {
+                context.startActivity(intent)
+            } catch (e: android.content.ActivityNotFoundException) {
+                Log.e("MainActivity", "No browser found to open release URL", e)
+            }
             onClose()
         },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val url = "https://github.com/eyalm2000/adns/releases"
-                    val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-                    try {
-                        context.startActivity(intent)
-                    } catch (e: android.content.ActivityNotFoundException) {
-                        Log.e("MainActivity", "No browser found to open release URL", e)
-                    }
-                    onClose()
-                }
-            ) {
-                Text(stringResource(R.string.download))
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    onClose()
-                }
-            ) {
-                Text(stringResource(R.string.dismiss))
-            }
-        }
+        onDismiss = onClose,
     )
 }
 

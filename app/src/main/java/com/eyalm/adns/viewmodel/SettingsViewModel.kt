@@ -61,6 +61,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         GENERIC_LIST,
         LOGS,
         LANGUAGE,
+        APPEARANCE,
     }
 
     private val repository = DnsRepository(application)
@@ -291,6 +292,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         Page.WIFI_RULES,
         Page.PROVIDERS,
         Page.LANGUAGE,
+        Page.APPEARANCE,
         -> true
     }
 

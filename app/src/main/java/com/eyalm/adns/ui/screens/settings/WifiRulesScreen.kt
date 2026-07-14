@@ -25,9 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.NetworkWifi
-import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -62,8 +60,14 @@ import com.eyalm.adns.data.runtime.RuntimeServiceFailure
 import com.eyalm.adns.data.wifi.ConnectedWifiIdentity
 import com.eyalm.adns.data.wifi.WifiRuleStatus
 import com.eyalm.adns.data.wifi.WifiSsid
-import com.eyalm.adns.ui.components.ExpressiveListItem
-import com.eyalm.adns.ui.components.dialogs.BaseDialog
+import com.eyalm.adns.ui.components.ActionSettingRow
+import com.eyalm.adns.ui.components.ExpressiveIcon
+import com.eyalm.adns.ui.components.ResourceSettingRow
+import com.eyalm.adns.ui.components.SegmentPosition
+import com.eyalm.adns.ui.components.ToggleSettingRow
+import com.eyalm.adns.ui.components.dialogs.DestructiveConfirmationDialog
+import com.eyalm.adns.ui.components.dialogs.FormDialog
+import com.eyalm.adns.ui.components.segmentPosition
 import com.eyalm.adns.ui.theme.settingsLabel
 import com.eyalm.adns.viewmodel.RuntimeMonitoringViewModel
 
@@ -227,10 +231,9 @@ fun WifiRulesScreen(
     }
 
     if (addDialogVisible) {
-        BaseDialog(
+        FormDialog(
             title = stringResource(R.string.wifi_rules_add_manual),
             confirmLabel = stringResource(R.string.add),
-            destructive = false,
             confirmEnabled = ssidInput.isNotBlank(),
             errorMessage = inputError?.let { stringResource(it) },
             onConfirm = {
@@ -264,11 +267,10 @@ fun WifiRulesScreen(
     }
 
     pendingRemoval?.let { ssid ->
-        BaseDialog(
+        DestructiveConfirmationDialog(
             title = stringResource(R.string.wifi_rules_remove),
             body = stringResource(R.string.wifi_rules_remove_message),
             confirmLabel = stringResource(R.string.remove_item),
-            destructive = true,
             onConfirm = {
                 viewModel.removeSsid(ssid)
                 pendingRemoval = null
@@ -294,7 +296,7 @@ fun WifiRulesScreen(
     )
     val currentSsidUnavailableMessage = stringResource(R.string.wifi_err_detect_ssid)
     val duplicateSsidMessage = stringResource(R.string.wifi_rules_duplicate)
-    SettingsCategoryScreenTemplate(
+    SettingsScreenScaffold(
         onBack = onBack,
         title = stringResource(R.string.wifi_rules),
         description = stringResource(R.string.wifi_rules_description),
@@ -343,22 +345,18 @@ fun WifiRulesScreen(
             }
             Spacer(Modifier.height(8.dp))
 
-            ExpressiveListItem(
+            ToggleSettingRow(
                 title = stringResource(R.string.wifi_rules_enable),
                 description = stringResource(R.string.wifi_rules_enable_description),
-                icon = Icons.Filled.PowerSettingsNew,
-                onClick = {
-                    if (runtime.wifiRulesEnabled) {
-                        viewModel.setWifiRulesEnabled(false)
-                    } else {
-                        requestLocationPermission(WifiPermissionAction.EnableRules)
-                    }
+                checked = runtime.wifiRulesEnabled,
+                toggle = { checked, onCheckedChange ->
+                    Switch(checked = checked, onCheckedChange = onCheckedChange)
                 },
-                interactiveItem = { _, onClick ->
-                    Switch(checked = runtime.wifiRulesEnabled, onCheckedChange = { onClick() })
+                onCheckedChange = { enabled ->
+                    if (!enabled) viewModel.setWifiRulesEnabled(false)
+                    else requestLocationPermission(WifiPermissionAction.EnableRules)
                 },
-                isFirst = true,
-                isLast = true
+                position = SegmentPosition.Single,
             )
             Spacer(Modifier.height(20.dp))
         }
@@ -372,20 +370,21 @@ fun WifiRulesScreen(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
                     )
-                    ExpressiveListItem(
+                    ResourceSettingRow(
                         title = stringResource(R.string.runtime_service_status),
                         description = statusText,
-                        icon = Icons.Filled.NetworkWifi,
-                        secondIcon = if (
-                            identity == ConnectedWifiIdentity.PermissionRequired
-                        ) Icons.AutoMirrored.Filled.KeyboardArrowRight else null,
+                        leading = { ExpressiveIcon(Icons.Filled.NetworkWifi) },
+                        trailing = if (identity == ConnectedWifiIdentity.PermissionRequired) {
+                            {
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                            }
+                        } else null,
                         onClick = {
                             if (identity == ConnectedWifiIdentity.PermissionRequired) {
                                 requestLocationPermission(WifiPermissionAction.EnableRules)
                             }
                         },
-                        isLast = true,
-                        isFirst = true
+                        position = SegmentPosition.Single,
                     )
                     Spacer(Modifier.height(4.dp))
                     Row(
@@ -466,16 +465,13 @@ fun WifiRulesScreen(
             } else {
                 val sortedSsids = rules.configuration.ssids.sortedBy { it.value }
                 itemsIndexed(sortedSsids) { index, ssid ->
-                    val isFirst = index == 0
-                    val isLast = index == sortedSsids.size - 1
-                    ExpressiveListItem(
+                    ActionSettingRow(
                         onClick = { pendingRemoval = ssid },
                         title = ssid.value,
                         description = null,
-                        icon = Icons.Default.Wifi,
-                        secondIcon = Icons.Default.Delete,
-                        isFirst = isFirst,
-                        isLast = isLast
+                        leading = { ExpressiveIcon(Icons.Default.Wifi) },
+                        trailing = { Icon(Icons.Default.Delete, contentDescription = null) },
+                        position = segmentPosition(index, sortedSsids.size),
                     )
                     Spacer(Modifier.height(4.dp))
                 }

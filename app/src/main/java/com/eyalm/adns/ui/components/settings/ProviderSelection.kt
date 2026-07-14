@@ -1,6 +1,7 @@
 package com.eyalm.adns.ui.components.settings
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -9,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -23,7 +25,10 @@ import com.eyalm.adns.data.provider.ProviderDefinition
 import com.eyalm.adns.data.provider.ResolverPresetId
 import com.eyalm.adns.data.provider.StandardProviderDefinition
 import com.eyalm.adns.data.provider.providerId
-import com.eyalm.adns.ui.components.ExpressiveListItem
+import com.eyalm.adns.ui.components.RadioSettingRow
+import com.eyalm.adns.ui.components.ResourceSettingRow
+import com.eyalm.adns.ui.components.SegmentPosition
+import com.eyalm.adns.ui.components.segmentPosition
 
 fun LazyListScope.ProviderSelection(
     catalog: DnsProviderCatalog,
@@ -37,10 +42,13 @@ fun LazyListScope.ProviderSelection(
     isCustomHostnameValid: Boolean,
     showCustomConfirmButton: Boolean = true,
 ) {
+
+    // TODO - take care of ResourceSettingRow here
+
     catalog.providers.forEachIndexed { index, provider ->
         val selected = currentSelection?.providerId == provider.id && !isCustomSelected
         item(key = provider.id.value) {
-            ExpressiveListItem(
+            ResourceSettingRow(
                 title = stringResource(provider.titleRes) +
                     if (provider.id == DnsProviderCatalog.NEXTDNS) {
                         " ${stringResource(R.string.recommended)}"
@@ -48,29 +56,36 @@ fun LazyListScope.ProviderSelection(
                         ""
                     },
                 description = stringResource(provider.descriptionRes),
-                isSelected = selected,
+                selected = selected,
                 onClick = {
                     onProviderClick(
                         resolveProviderSelectionAction(provider, currentSelection)
                     )
                 },
-                altLeadingContent = {
+                leading = {
                     RadioButton(
                         selected = selected,
                         onClick = null,
                     )
                 },
-                secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight.takeIf {
-                    shouldShowProviderOptionsHint(provider, currentSelection)
+                trailing = if (shouldShowProviderOptionsHint(provider, currentSelection)) {
+                    {
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                        )
+                    }
+                } else {
+                    null
                 },
-                isFirst = index == 0,
+                position = segmentPosition(index, catalog.providers.size + 1),
             )
         }
     }
 
     item(key = "custom") {
-        ExpressiveListItem(
-            altContent = {
+        ResourceSettingRow(
+            supporting = {
                 if (isCustomSelected) {
                     Column {
                         OutlinedTextField(
@@ -105,9 +120,9 @@ fun LazyListScope.ProviderSelection(
                     }
                 }
             },
-            isSelected = isCustomSelected,
+            selected = isCustomSelected,
             onClick = onCustomClick,
-            altLeadingContent = {
+            leading = {
                 RadioButton(
                     selected = isCustomSelected,
                     onClick = null,
@@ -115,7 +130,7 @@ fun LazyListScope.ProviderSelection(
             },
             title = stringResource(R.string.custom_hostname_advanced),
             description = stringResource(R.string.use_a_custom_hostname_for_the_dns_server),
-            isLast = true,
+            position = SegmentPosition.Last,
         )
     }
 }
@@ -128,20 +143,20 @@ fun LazyListScope.ProviderPresetSelection(
     provider.presets.forEachIndexed { index, preset ->
         val selected = selectedPresetId == preset.id
         item(key = preset.id.value) {
-            ExpressiveListItem(
+            RadioSettingRow(
                 title = stringResource(preset.titleRes),
                 description = stringResource(preset.descriptionRes),
-                isSelected = selected,
+                selected = selected,
                 onClick = { onPresetClick(preset.id) },
-                altLeadingContent = {
+                radio = { _, onClick ->
                     RadioButton(
                         selected = selected,
-                        onClick = null,
+                        onClick = onClick,
                     )
                 },
-                isFirst = index == 0,
-                isLast = index == provider.presets.lastIndex,
+                position = segmentPosition(index, provider.presets.size),
             )
+            Spacer(Modifier.height(4.dp))
         }
     }
 }

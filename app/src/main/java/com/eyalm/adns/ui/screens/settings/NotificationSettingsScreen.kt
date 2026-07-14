@@ -36,7 +36,10 @@ import com.eyalm.adns.data.runtime.NotificationPermissionState
 import com.eyalm.adns.data.runtime.RuntimeMonitorReason
 import com.eyalm.adns.data.runtime.RuntimeNotifications
 import com.eyalm.adns.data.runtime.RuntimeServiceFailure
-import com.eyalm.adns.ui.components.ExpressiveListItem
+import com.eyalm.adns.ui.components.ExpressiveIcon
+import com.eyalm.adns.ui.components.ResourceSettingRow
+import com.eyalm.adns.ui.components.SegmentPosition
+import com.eyalm.adns.ui.components.ToggleSettingRow
 import com.eyalm.adns.ui.theme.settingsLabel
 import com.eyalm.adns.viewmodel.RuntimeMonitoringViewModel
 
@@ -107,7 +110,7 @@ fun NotificationSettingsScreen(
     val activationMissing = state.stateNotificationEnabled &&
         RuntimeMonitorReason.StateNotification !in state.activeReasons
 
-    SettingsCategoryScreenTemplate(
+    SettingsScreenScaffold(
         onBack = onBack,
         title = stringResource(R.string.notification_settings),
         description = stringResource(R.string.notification_settings_description),
@@ -156,13 +159,14 @@ fun NotificationSettingsScreen(
                 )
             }
 
-            ExpressiveListItem(
+            ToggleSettingRow(
                 title = stringResource(R.string.state_notifications),
                 description = stringResource(R.string.state_notification_description),
-                icon = Icons.Filled.Notifications,
-                isSelected = state.stateNotificationEnabled,
-                onClick = {
-                    val enable = !state.stateNotificationEnabled
+                checked = state.stateNotificationEnabled,
+                toggle = { checked, onCheckedChange ->
+                    Switch(checked = checked, onCheckedChange = onCheckedChange)
+                },
+                onCheckedChange = { enable ->
                     if (
                         enable &&
                         Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -173,11 +177,7 @@ fun NotificationSettingsScreen(
                         viewModel.setStateNotificationEnabled(enable)
                     }
                 },
-                interactiveItem = { selected, onClick ->
-                    Switch(checked = selected, onCheckedChange = { onClick() })
-                },
-                isFirst = true,
-                isLast = true,
+                position = SegmentPosition.Single,
             )
             Spacer(Modifier.height(20.dp))
         }
@@ -185,7 +185,7 @@ fun NotificationSettingsScreen(
         if (runtimeRequested) {
             item {
                 SettingsSectionLabel(stringResource(R.string.settings_status_header))
-                ExpressiveListItem(
+                ResourceSettingRow(
                     title = stringResource(R.string.runtime_service_status),
                     description = buildString {
                         append(serviceStatusText)
@@ -197,16 +197,15 @@ fun NotificationSettingsScreen(
                             append(wifiReasonText)
                         }
                     },
-                    icon = Icons.Filled.SettingsSuggest,
-                    isFirst = true,
-                    isLast = !activationMissing,
+                    leading = { ExpressiveIcon(Icons.Filled.SettingsSuggest) },
+                    position = if (activationMissing) SegmentPosition.First else SegmentPosition.Single,
                 )
                 if (activationMissing) {
-                    ExpressiveListItem(
+                    ResourceSettingRow(
                         title = stringResource(R.string.activation_required),
                         description = stringResource(R.string.activation_missing_description),
-                        icon = Icons.Filled.Security,
-                        isLast = true,
+                        leading = { ExpressiveIcon(Icons.Filled.Security) },
+                        position = SegmentPosition.Last,
                     )
                 }
                 Spacer(Modifier.height(20.dp))

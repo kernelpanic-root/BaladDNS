@@ -20,7 +20,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.eyalm.adns.ui.components.ExpressiveListItem
+import com.eyalm.adns.ui.components.RadioSettingRow
+import com.eyalm.adns.ui.components.SegmentPosition
 import com.eyalm.adns.ui.components.OnboardingTemplate
 import com.eyalm.adns.ui.components.StandardBottomBar
 import com.eyalm.adns.ui.theme.pageTitle
@@ -91,33 +92,33 @@ fun ActivationMethodScreen(
             }
 
             item {
-                ExpressiveListItem(
+                RadioSettingRow(
                     title = stringResource(R.string.shizuku),
                     description = stringResource(R.string.requires_shizuku_or_sui_installed_and_set_up),
-                    isSelected = shizukuPressed,
+                    selected = shizukuPressed,
                     onClick = {
                         shizukuPressed = !shizukuPressed
                         adbPressed = false
                     },
-                    altLeadingContent = {
-                        RadioButton(selected = shizukuPressed, onClick = null)
+                    radio = { _, onClick ->
+                        RadioButton(selected = shizukuPressed, onClick = onClick)
                     },
-                    isFirst = true,
+                    position = SegmentPosition.First,
                 )
             }
             item {
-                ExpressiveListItem(
+                RadioSettingRow(
                     title = stringResource(R.string.adb_shell),
                     description = stringResource(R.string.requires_adb_shell_access_for_advanced_users),
-                    isSelected = adbPressed,
+                    selected = adbPressed,
                     onClick = {
                         adbPressed = !adbPressed
                         shizukuPressed = false
                     },
-                    altLeadingContent = {
-                        RadioButton(selected = adbPressed, onClick = null)
+                    radio = { _, onClick ->
+                        RadioButton(selected = adbPressed, onClick = onClick)
                     },
-                    isLast = true,
+                    position = SegmentPosition.Last,
                 )
             }
         }

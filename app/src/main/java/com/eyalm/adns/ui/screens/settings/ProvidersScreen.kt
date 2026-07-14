@@ -140,26 +140,11 @@ fun ProvidersScreen(
                 )
             }
 
-            ProviderScreenPage.Providers -> Scaffold(
+            ProviderScreenPage.Providers -> SettingsScreenLayout(
+                title = stringResource(R.string.providers),
+                onBack = onBack,
+                showAppBarTitle = false,
                 modifier = modifier.fillMaxSize(),
-                topBar = {
-                    TopAppBar(
-                        title = {},
-                        navigationIcon = {
-                            IconButton(onClick = onBack) {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = stringResource(R.string.back),
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.background
-                        ),
-                    )
-                },
-                containerColor = MaterialTheme.colorScheme.background,
-                contentWindowInsets = WindowInsets.systemBars,
             ) { innerPadding ->
                 LazyColumn(
                     state = listState,
@@ -238,7 +223,7 @@ private fun ProviderPresetOptionsScreen(
     onBack: () -> Unit,
     onPresetSelected: (com.eyalm.adns.data.provider.ResolverPresetId) -> Unit,
 ) {
-    SettingsCategoryScreenTemplate(
+    SettingsScreenScaffold(
         onBack = onBack,
         title = stringResource(page.provider.titleRes),
         description = stringResource(page.provider.descriptionRes),

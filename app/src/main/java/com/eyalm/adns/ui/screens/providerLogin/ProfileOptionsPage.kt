@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.eyalm.adns.data.nextdns.api.NextDnsProfile
 import com.eyalm.adns.ui.components.OnboardingTemplate
 import com.eyalm.adns.ui.components.ProfilesList
+import com.eyalm.adns.ui.components.dialogs.FormDialog
 import com.eyalm.adns.ui.components.StandardBottomBar
 import com.eyalm.adns.ui.theme.pageTitle
 
@@ -98,46 +99,19 @@ fun CreateProfileDialog(
 ) {
 
     var name by remember { mutableStateOf("") }
-    var isValid by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        icon = {
-            Icon(Icons.Default.Add, contentDescription = null)
-        },
-        title = {
-            Text(text = stringResource(R.string.create_profile))
-        },
-        text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text(stringResource(R.string.profile_name)) },
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-            )
-        },
-        onDismissRequest = {
-            onDismissRequest()
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    if (name.trim().isNotEmpty()) {
-                        onConfirmation(name)
-                    }
-                }
-            ) {
-                Text(stringResource(R.string.create))
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    onDismissRequest()
-                }
-            ) {
-                Text(stringResource(R.string.dismiss))
-            }
-        }
-    )
+    FormDialog(
+        title = stringResource(R.string.create_profile),
+        confirmLabel = stringResource(R.string.create),
+        confirmEnabled = name.trim().isNotEmpty(),
+        onConfirm = { if (name.trim().isNotEmpty()) onConfirmation(name) },
+        onDismiss = onDismissRequest,
+    ) {
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text(stringResource(R.string.profile_name)) },
+            shape = RoundedCornerShape(12.dp),
+            singleLine = true,
+        )
+    }
 }

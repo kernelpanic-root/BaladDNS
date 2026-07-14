@@ -416,4 +416,11 @@
     <string name="wifi_background_location_description">Allow location access all the time so Android can restart Wi-Fi rules automatically after the device reboots. ADNS only reads the connected Wi-Fi name.</string>
     <string name="wifi_battery_optimization_description">Battery optimization may interrupt Wi-Fi monitoring. You can review the system setting, but this is not a location permission.</string>
     <string name="settings_status_header">STATUS</string>
+    <string name="appearance">Appearance</string>
+    <string name="appearance_description">Choose how ADNS looks on this device.</string>
+    <string name="theme_system_default">System default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="color_scheme_adns">ADNS colors</string>
+    <string name="color_scheme_system">System colors</string>
 </resources>

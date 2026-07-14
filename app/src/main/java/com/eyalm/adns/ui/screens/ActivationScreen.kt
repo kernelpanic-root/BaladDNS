@@ -39,12 +39,14 @@ import com.eyalm.adns.R
 import com.eyalm.adns.data.activation.ActivationMode
 import com.eyalm.adns.data.activation.ActivationState
 import com.eyalm.adns.data.activation.PermissionState
-import com.eyalm.adns.ui.components.ExpressiveListItem
+import com.eyalm.adns.ui.components.ExpressiveIcon
+import com.eyalm.adns.ui.components.ResourceSettingRow
+import com.eyalm.adns.ui.components.SegmentPosition
 import com.eyalm.adns.ui.screens.onboarding.ActivationMethodScreen
 import com.eyalm.adns.ui.screens.onboarding.AdbActivationScreen
 import com.eyalm.adns.ui.screens.onboarding.ShizukuActivationScreen
 import com.eyalm.adns.ui.screens.onboarding.SuccessScreen
-import com.eyalm.adns.ui.screens.settings.SettingsCategoryScreenTemplate
+import com.eyalm.adns.ui.screens.settings.SettingsScreenScaffold
 import com.eyalm.adns.viewmodel.PermissionAcquisitionState
 
 enum class ActivationScreenPage {
@@ -254,7 +256,7 @@ private fun ActivationOverview(
     onActivate: () -> Unit,
     onUseControlOnly: () -> Unit,
 ) {
-    SettingsCategoryScreenTemplate(
+    SettingsScreenScaffold(
         onBack = onBack,
         title = stringResource(R.string.activation),
     ) {
@@ -382,7 +384,7 @@ private fun BenefitsSection() {
             icon = Icons.Filled.Shield,
             title = stringResource(R.string.system_level_dns_control),
             description = stringResource(R.string.system_level_dns_control_description),
-            isFirst = true,
+            position = SegmentPosition.First,
         )
         BenefitRow(
             icon = Icons.Filled.Speed,
@@ -393,7 +395,7 @@ private fun BenefitsSection() {
             icon = Icons.Filled.Lock,
             title = stringResource(R.string.private_dns_automation),
             description = stringResource(R.string.private_dns_automation_description),
-            isLast = true,
+            position = SegmentPosition.Last,
         )
     }
 }
@@ -403,14 +405,12 @@ private fun BenefitRow(
     icon: ImageVector,
     title: String,
     description: String,
-    isFirst: Boolean = false,
-    isLast: Boolean = false,
+    position: SegmentPosition = SegmentPosition.Middle,
 ) {
-    ExpressiveListItem(
-        icon = icon,
+    ResourceSettingRow(
+        leading = { ExpressiveIcon(icon) },
         title = title,
         description = description,
-        isFirst = isFirst,
-        isLast = isLast,
+        position = position,
     )
 }

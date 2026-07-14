@@ -17,7 +17,7 @@ import kotlinx.coroutines.withContext
 class AdnsTileService : TileService() {
 
     override fun attachBaseContext(newBase: android.content.Context) {
-        super.attachBaseContext(com.eyalm.adns.data.LocaleHelper.onAttach(newBase))
+        super.attachBaseContext(com.eyalm.adns.data.localization.localizedContext(newBase))
     }
 
     private val repository by lazy { DnsRepository(this) }

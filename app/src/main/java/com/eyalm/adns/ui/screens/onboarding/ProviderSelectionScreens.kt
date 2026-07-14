@@ -21,7 +21,8 @@ import com.eyalm.adns.data.provider.DnsProviderCatalog
 import com.eyalm.adns.data.provider.DnsProviderSelection
 import com.eyalm.adns.data.provider.PrivateDnsHostname
 import com.eyalm.adns.data.provider.StandardProviderDefinition
-import com.eyalm.adns.ui.components.ExpressiveListItem
+import com.eyalm.adns.ui.components.RadioSettingRow
+import com.eyalm.adns.ui.components.SegmentPosition
 import com.eyalm.adns.ui.components.OnboardingTemplate
 import com.eyalm.adns.ui.components.StandardBottomBar
 import com.eyalm.adns.ui.components.settings.ProviderPresetSelection
@@ -191,28 +192,28 @@ fun OnboardingActivationModeScreen(
             }
             item {
                 val isSelected = selected == ActivationMode.PrivilegedDnsControl
-                ExpressiveListItem(
+                RadioSettingRow(
                     title = stringResource(R.string.privileged_dns_control),
                     description = stringResource(R.string.privileged_dns_control_description),
-                    isSelected = isSelected,
+                    selected = isSelected,
                     onClick = { selected = ActivationMode.PrivilegedDnsControl },
-                    altLeadingContent = {
-                        RadioButton(selected = isSelected, onClick = null)
+                    radio = { _, onClick ->
+                        RadioButton(selected = isSelected, onClick = onClick)
                     },
-                    isFirst = true,
+                    position = SegmentPosition.First,
                 )
             }
             item {
                 val isSelected = selected == ActivationMode.NextDnsControlOnly
-                ExpressiveListItem(
+                RadioSettingRow(
                     title = stringResource(R.string.control_only_mode),
                     description = stringResource(R.string.control_only_mode_description),
-                    isSelected = isSelected,
+                    selected = isSelected,
                     onClick = { selected = ActivationMode.NextDnsControlOnly },
-                    altLeadingContent = {
-                        RadioButton(selected = isSelected, onClick = null)
+                    radio = { _, onClick ->
+                        RadioButton(selected = isSelected, onClick = onClick)
                     },
-                    isLast = true,
+                    position = SegmentPosition.Last,
                 )
             }
         }

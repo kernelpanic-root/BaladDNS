@@ -64,7 +64,7 @@ import com.eyalm.adns.data.nextdns.setup.SetupGuideTag
 import com.eyalm.adns.data.nextdns.setup.SetupContent
 import com.eyalm.adns.data.nextdns.setup.segments
 import com.eyalm.adns.domain.nextdns.ApiResult
-import com.eyalm.adns.ui.components.dialogs.BaseDialog
+import com.eyalm.adns.ui.components.dialogs.FormDialog
 import com.eyalm.adns.ui.components.settings.LoadingError
 import com.eyalm.adns.viewmodel.nextdns.DdnsDialogState
 import com.eyalm.adns.viewmodel.nextdns.SetupEffect
@@ -119,7 +119,7 @@ fun SetupScreen(
         }
     }
 
-    SettingsCategoryScreenTemplate(
+    SettingsScreenScaffold(
         onBack = onBack,
         title = Locales.getString("pages", "setup"),
         refreshing = state.loading && state.content != null,
@@ -239,7 +239,7 @@ private fun SetupProfileRequiredScreen(
     onBack: () -> Unit,
     onSelectProfile: () -> Unit,
 ) {
-    SettingsCategoryScreenTemplate(
+    SettingsScreenScaffold(
         onBack = onBack,
         title = Locales.getString("pages", "setup"),
     ) {
@@ -427,10 +427,9 @@ private fun DdnsDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    BaseDialog(
+    FormDialog(
         title = Locales.getString("setup", "linkedIp", "ddns", "set"),
         confirmLabel = Locales.getString("global", "save"),
-        destructive = false,
         submitting = state.submitting,
         onConfirm = onConfirm,
         onDismiss = onDismiss,

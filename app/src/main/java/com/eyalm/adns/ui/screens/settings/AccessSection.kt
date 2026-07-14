@@ -32,8 +32,14 @@ import com.eyalm.adns.data.nextdns.access.AccessEntry
 import com.eyalm.adns.data.nextdns.access.AccessError
 import com.eyalm.adns.data.nextdns.access.AccessField
 import com.eyalm.adns.data.nextdns.access.AccessRole
-import com.eyalm.adns.ui.components.ExpressiveListItem
-import com.eyalm.adns.ui.components.dialogs.BaseDialog
+import com.eyalm.adns.ui.components.ExpressiveCard
+import com.eyalm.adns.ui.components.ExpressiveCardHeader
+import com.eyalm.adns.ui.components.RadioSettingRow
+import com.eyalm.adns.ui.components.ResourceSettingRow
+import com.eyalm.adns.ui.components.SegmentPosition
+import com.eyalm.adns.ui.components.dialogs.DestructiveConfirmationDialog
+import com.eyalm.adns.ui.components.dialogs.FormDialog
+import com.eyalm.adns.ui.components.segmentPosition
 import com.eyalm.adns.viewmodel.nextdns.AccessUiState
 import com.eyalm.adns.viewmodel.nextdns.AccessViewModel
 
@@ -49,19 +55,17 @@ fun AccessSection(
         viewModel.load(profileId, canManage = true)
     }
 
-    ExpressiveListItem(
-        topPadding = 4.dp,
-        title = Locales.getString("settings", "access", "name"),
-        description = Locales.getString("settings", "access", "description"),
-        isFirst = true,
-        isLast = true,
-        trailingCenter = true,
-        interactiveItem = { _,_ ->
+    ExpressiveCard {
+        ExpressiveCardHeader(
+            title = Locales.getString("settings", "access", "name"),
+            description = Locales.getString("settings", "access", "description"),
+            trailing = {
             IconButton(onClick = viewModel::openInvite) {
                 Icon(imageVector = Icons.Filled.Add, contentDescription = Locales.getString("global", "add"))
             }
-        }
-    ) {
+            },
+        )
+        Spacer(Modifier.height(12.dp))
         if (!state.initialLoadComplete) {
             Box(
                 modifier = Modifier
@@ -77,13 +81,10 @@ fun AccessSection(
                     Text(error, color = MaterialTheme.colorScheme.error)
                 }
             }
-            Spacer(Modifier.height(12.dp))
-
             state.items.forEachIndexed { index, entry ->
                 AccessRow(
                     entry = entry,
-                    isFirst = index == 0,
-                    isLast = index == state.items.lastIndex,
+                    position = segmentPosition(index, state.items.size),
                     onRoleClick = { viewModel.requestRoleChange(entry) },
                     onDelete = { viewModel.requestDelete(entry) },
                 )
@@ -118,11 +119,10 @@ fun AccessSection(
     }
 
     state.deleting?.let { entry ->
-        BaseDialog(
+        DestructiveConfirmationDialog(
             title = Locales.getString("global","remove"),
             body = stringResource(R.string.remove, entry.email),
             confirmLabel = Locales.getString("global", "remove"),
-            destructive = true,
             submitting = state.submitting,
             errorMessage = state.errorMessage,
             onConfirm = viewModel::confirmDelete,
@@ -140,10 +140,9 @@ private fun InviteAccessDialog(
     onSubmit: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    BaseDialog(
+    FormDialog(
         title = Locales.getString("global", "invite"),
         confirmLabel = Locales.getString("global", "invite"),
-        destructive = false,
         submitting = state.submitting,
         errorMessage = state.errorMessage,
         onConfirm = onSubmit,
@@ -181,10 +180,9 @@ private fun AccessRoleDialog(
     onSubmit: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    BaseDialog(
+    FormDialog(
         title = Locales.getString("settings", "access", "form", "role", "label"),
         confirmLabel = Locales.getString("global", "save"),
-        destructive = false,
         submitting = submitting,
         errorMessage = errorMessage,
         onConfirm = onSubmit,
@@ -207,21 +205,20 @@ private fun AccessRoleChoices(
     enabled: Boolean,
     onRoleChange: (AccessRole) -> Unit,
 ) {
-    AccessRole.entries.forEach { role ->
-        ExpressiveListItem(
+    AccessRole.entries.forEachIndexed { index, role ->
+        RadioSettingRow(
             title = role.label(),
-            isSelected = role == selectedRole,
+            selected =role == selectedRole,
             onClick = { onRoleChange(role) },
-            isLast = role == AccessRole.entries.last(),
-            isFirst = role == AccessRole.entries.first(),
-            interactiveItem = { _,_ ->
+            position = segmentPosition(index, AccessRole.entries.size),
+            enabled = enabled,
+            radio = { selected, onClick ->
                 RadioButton(
-                    selected = role == selectedRole,
+                    selected = selected,
                     enabled = enabled,
-                    onClick = { onRoleChange(role) }
+                    onClick = onClick,
                 )
             },
-            overrideCorners = true
         )
     }
 }
@@ -229,14 +226,13 @@ private fun AccessRoleChoices(
 @Composable
 private fun AccessRow(
     entry: AccessEntry,
-    isFirst: Boolean,
-    isLast: Boolean,
+    position: SegmentPosition,
     onRoleClick: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    ExpressiveListItem(
+    ResourceSettingRow(
         title = entry.email,
-        isSelected = true,
+        selected = true,
         description = buildString {
             append(entry.role.label())
             if (entry.pending) {
@@ -245,7 +241,7 @@ private fun AccessRow(
             }
         },
         onClick = onRoleClick,
-        interactiveItem = { _, _ ->
+        trailing = {
             Row {
                 TextButton(onClick = onRoleClick) {
                     Text(entry.role.label())
@@ -255,9 +251,7 @@ private fun AccessRow(
                 }
             }
         },
-        isFirst = isFirst,
-        isLast = isLast,
-        overrideCorners = true
+        position = position,
     )
     Spacer(Modifier.height(4.dp))
 }

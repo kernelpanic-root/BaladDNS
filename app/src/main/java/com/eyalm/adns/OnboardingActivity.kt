@@ -2,10 +2,10 @@ package com.eyalm.adns
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.SizeTransform
@@ -23,8 +23,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.eyalm.adns.data.LocaleHelper
 import com.eyalm.adns.data.activation.ActivationMode
+import com.eyalm.adns.data.Locales
+import com.eyalm.adns.data.localization.AppLocaleRepository
 import com.eyalm.adns.data.provider.DnsProviderCatalog
 import com.eyalm.adns.data.provider.DnsProviderSelection
 import com.eyalm.adns.ui.screens.onboarding.ActivationMethodScreen
@@ -45,25 +46,10 @@ import com.eyalm.adns.viewmodel.PrivilegedMethod
 import com.eyalm.adns.viewmodel.ProviderLoginStep
 import com.eyalm.adns.viewmodel.ProviderLoginViewModel
 
-class OnboardingActivity : ComponentActivity() {
-    private var lastAppliedLang: String? = null
-
-    override fun attachBaseContext(newBase: android.content.Context) {
-        super.attachBaseContext(LocaleHelper.onAttach(newBase))
-    }
-
-    override fun onResume() {
-        super.onResume()
-        val savedLang = LocaleHelper.getLanguage(this)
-        if (lastAppliedLang != null && lastAppliedLang != savedLang) {
-            recreate()
-        }
-    }
-
+class OnboardingActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        LocaleHelper.applyLocale(this)
-        lastAppliedLang = LocaleHelper.getLanguage(this)
         super.onCreate(savedInstanceState)
+        Locales.sync(this, AppLocaleRepository(this).selectedTag())
         enableEdgeToEdge()
         setContent {
             val onboardingViewModel: OnboardingViewModel = viewModel()

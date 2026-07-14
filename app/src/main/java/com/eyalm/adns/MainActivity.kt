@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -44,20 +43,22 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.data.DnsRepository
-import com.eyalm.adns.data.LocaleHelper
 import com.eyalm.adns.data.activation.ActivationMode
 import com.eyalm.adns.data.activation.ActivationRepositories
 import com.eyalm.adns.data.nextdns.auth.NextDnsSessionManager
+import com.eyalm.adns.data.Locales
+import com.eyalm.adns.data.localization.AppLocaleRepository
 import com.eyalm.adns.data.provider.DnsProviderCatalog
 import com.eyalm.adns.data.provider.DnsProviderSelection
 import com.eyalm.adns.data.runtime.RuntimeServiceController
@@ -65,33 +66,27 @@ import com.eyalm.adns.domain.AppCapabilities
 import com.eyalm.adns.domain.AppDestination
 import com.eyalm.adns.domain.MainTab
 import com.eyalm.adns.domain.resolveAvailableMainTab
-import com.eyalm.adns.ui.components.dialogs.BaseDialog
-import com.eyalm.adns.ui.screens.forcedActivationExitPolicy
+import com.eyalm.adns.ui.components.dialogs.ConfirmationDialog
 import com.eyalm.adns.ui.screens.ActivationScreen
 import com.eyalm.adns.ui.screens.HomeScreen
-import com.eyalm.adns.ui.screens.updatedForcedActivationVisibility
-import com.eyalm.adns.ui.screens.settings.SettingsTabRouter
 import com.eyalm.adns.ui.screens.StatsScreen
 import com.eyalm.adns.ui.screens.UpdateDialog
+import com.eyalm.adns.ui.screens.forcedActivationExitPolicy
+import com.eyalm.adns.ui.screens.settings.SettingsTabRouter
+import com.eyalm.adns.ui.screens.updatedForcedActivationVisibility
 import com.eyalm.adns.ui.theme.AdnsTheme
 import com.eyalm.adns.viewmodel.MainViewModel
 import com.eyalm.adns.viewmodel.OnboardingViewModel
-import com.eyalm.adns.viewmodel.SettingsViewModel
 import com.eyalm.adns.viewmodel.RuntimeMonitoringViewModel
+import com.eyalm.adns.viewmodel.SettingsViewModel
 import kotlinx.coroutines.launch
 
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val viewModel: MainViewModel by viewModels()
     private val settingsViewModel: SettingsViewModel by viewModels()
     private val runtimeMonitoringViewModel: RuntimeMonitoringViewModel by viewModels()
-    private var lastAppliedLang: String? = null
-
-    override fun attachBaseContext(newBase: Context) {
-        super.attachBaseContext(LocaleHelper.onAttach(newBase))
-    }
-
     private fun handleShortcutIntent(intent: Intent?) {
         if (intent?.action == "com.eyalm.adns.TOGGLE_ACTION") {
             viewModel.toggleDns()
@@ -105,11 +100,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        val savedLang = LocaleHelper.getLanguage(this)
-        if (lastAppliedLang != null && lastAppliedLang != savedLang) {
-            recreate()
-            return
-        }
         lifecycleScope.launch {
             ActivationRepositories.getInstance(applicationContext).refreshPermission()
             runtimeMonitoringViewModel.refreshSystemState()
@@ -124,11 +114,9 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        LocaleHelper.applyLocale(this)
-        lastAppliedLang = LocaleHelper.getLanguage(this)
-        val context = applicationContext
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        Locales.sync(this, AppLocaleRepository(this).selectedTag())
 
         val activationRepository = ActivationRepositories.getInstance(applicationContext)
         activationRepository.refreshPermission()
@@ -285,11 +273,10 @@ fun Greeting(
     val reauthenticationRequested by nextDnsSessionManager.reauthenticationRequested.collectAsState()
 
     if (reauthenticationRequested) {
-        BaseDialog(
+        ConfirmationDialog(
             title = stringResource(R.string.nextdns_session_expired_title),
             body = stringResource(R.string.nextdns_session_expired_message),
             confirmLabel = stringResource(R.string.sign_in),
-            destructive = false,
             onConfirm = {
                 nextDnsSessionManager.dismissReauthenticationRequest()
                 onNavigateToProviders(DnsProviderCatalog.NEXTDNS.value)

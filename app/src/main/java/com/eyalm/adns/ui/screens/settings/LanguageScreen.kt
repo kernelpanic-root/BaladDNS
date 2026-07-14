@@ -1,61 +1,39 @@
 package com.eyalm.adns.ui.screens.settings
 
-import android.app.Activity
 import androidx.compose.material3.RadioButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.eyalm.adns.R
-import com.eyalm.adns.data.LocaleHelper
-import com.eyalm.adns.ui.components.ExpressiveListItem
-
-// TODO: Move to a dynamic approach
+import com.eyalm.adns.data.localization.AppLocaleRepository
+import com.eyalm.adns.ui.components.RadioSettingRow
+import com.eyalm.adns.ui.components.segmentPosition
 
 @Composable
 fun LanguageScreen(onBack: () -> Unit) {
     val context = LocalContext.current
-    val currentLang = remember { LocaleHelper.getLanguage(context) }
+    val repository = remember(context) { AppLocaleRepository(context.applicationContext) }
+    val currentTag = repository.selectedTag()
+    val locales = remember { repository.supportedLocales() }
 
-    SettingsCategoryScreenTemplate(
+    SettingsScreenScaffold(
         onBack = onBack,
         title = stringResource(R.string.language),
-        description = stringResource(R.string.language_description)
+        description = stringResource(R.string.language_description),
     ) {
-        item {
-            ExpressiveListItem(
-                title = "English",
-                onClick = {
-                    LocaleHelper.setLocale(context, "en")
-                    (context as? Activity)?.recreate()
-                },
-                isFirst = true,
-                isSelected = currentLang == "en",
-                altLeadingContent = {
-                    RadioButton(
-                        currentLang == "en",
-                        onClick = { },
-                    )
-                },
-            )
-        }
-
-        item {
-            ExpressiveListItem(
-                title = "עברית",
-                onClick = {
-                    LocaleHelper.setLocale(context, "iw")
-                    (context as? Activity)?.recreate()
-                },
-                isLast = true,
-                isSelected = currentLang == "iw",
-                altLeadingContent = {
-                    RadioButton(
-                        currentLang == "iw",
-                        onClick = { },
-                    )
-                },
-            )
+        locales.forEachIndexed { index, locale ->
+            item(key = locale.tag) {
+                RadioSettingRow(
+                    title = locale.nativeDisplayName,
+                    selected = locale.tag == currentTag,
+                    position = segmentPosition(index, locales.size),
+                    radio = { selected, onClick ->
+                        RadioButton(selected = selected, onClick = onClick)
+                    },
+                    onClick = { repository.select(locale.tag) },
+                )
+            }
         }
     }
 }

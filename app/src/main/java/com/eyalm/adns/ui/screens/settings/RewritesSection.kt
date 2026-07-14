@@ -30,8 +30,13 @@ import com.eyalm.adns.data.Locales
 import com.eyalm.adns.data.nextdns.rewrites.Rewrite
 import com.eyalm.adns.data.nextdns.rewrites.RewriteError
 import com.eyalm.adns.data.nextdns.rewrites.RewriteField
-import com.eyalm.adns.ui.components.ExpressiveListItem
-import com.eyalm.adns.ui.components.dialogs.BaseDialog
+import com.eyalm.adns.ui.components.ResourceSettingRow
+import com.eyalm.adns.ui.components.SegmentPosition
+import com.eyalm.adns.ui.components.segmentPosition
+import com.eyalm.adns.ui.components.ExpressiveCard
+import com.eyalm.adns.ui.components.ExpressiveCardHeader
+import com.eyalm.adns.ui.components.dialogs.DestructiveConfirmationDialog
+import com.eyalm.adns.ui.components.dialogs.FormDialog
 import com.eyalm.adns.viewmodel.nextdns.RewritesUiState
 import com.eyalm.adns.viewmodel.nextdns.RewritesViewModel
 
@@ -48,14 +53,11 @@ fun RewritesSection(
         viewModel.load(profileId, canEdit)
     }
 
-    ExpressiveListItem(
-        topPadding = 4.dp,
-        title = Locales.getString("settings", "rewrites", "name"),
-        description = Locales.getString("settings", "rewrites", "description"),
-        isFirst = true,
-        isLast = true,
-        trailingCenter = true,
-        interactiveItem = { _, _ ->
+    ExpressiveCard {
+        ExpressiveCardHeader(
+            title = Locales.getString("settings", "rewrites", "name"),
+            description = Locales.getString("settings", "rewrites", "description"),
+            trailing = {
             Row {
                 Spacer(Modifier.width(4.dp))
                 IconButton(onClick = viewModel::openCreate, enabled = canEdit) {
@@ -65,9 +67,9 @@ fun RewritesSection(
                     )
                 }
             }
-
-        }
-    ) {
+            },
+        )
+        Spacer(Modifier.height(12.dp))
         if (!state.initialLoadComplete) {
             Box(
                 modifier = Modifier
@@ -83,13 +85,10 @@ fun RewritesSection(
                     Text(error, color = MaterialTheme.colorScheme.error)
                 }
             }
-            Spacer(Modifier.height(12.dp))
-
             state.items.forEachIndexed { index, rewrite ->
                 RewriteRow(
                     rewrite = rewrite,
-                    isFirst = index == 0,
-                    isLast = index == state.items.lastIndex,
+                    position = segmentPosition(index, state.items.size),
                     onDelete = { viewModel.requestDelete(rewrite) },
                     canEdit = canEdit
                 )
@@ -112,11 +111,10 @@ fun RewritesSection(
     }
 
     state.deleting?.let { rewrite ->
-        BaseDialog(
+        DestructiveConfirmationDialog(
             title = Locales.getString("global", "remove"),
             body = stringResource(R.string.remove, rewrite.name),
             confirmLabel = Locales.getString("global", "remove"),
-            destructive = true,
             submitting = state.submitting,
             errorMessage = state.errorMessage,
             onConfirm = viewModel::confirmDelete,
@@ -133,10 +131,9 @@ private fun RewriteFormDialog(
     onSubmit: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    BaseDialog(
+    FormDialog(
         title = Locales.getString("settings", "rewrites", "new"),
         confirmLabel = Locales.getString("global", "save"),
-        destructive = false,
         submitting = state.submitting,
         errorMessage = state.errorMessage,
         onConfirm = onSubmit,
@@ -187,17 +184,16 @@ private fun RewriteFormDialog(
 @Composable
 private fun RewriteRow(
     rewrite: Rewrite,
-    isFirst: Boolean,
-    isLast: Boolean,
+    position: SegmentPosition,
     onDelete: () -> Unit,
     canEdit: Boolean
 ) {
-    ExpressiveListItem(
+    ResourceSettingRow(
         title = "*.${rewrite.name} → ${rewrite.content}",
-        isSelected = true,
+        selected = true,
         description = rewrite.type,
         onClick = {},
-        interactiveItem = { _, _ ->
+        trailing = {
             IconButton(onClick = onDelete, enabled = canEdit) {
                 Icon(
                     imageVector = Icons.Default.Delete,
@@ -205,9 +201,7 @@ private fun RewriteRow(
                 )
             }
         },
-        isFirst = isFirst,
-        isLast = isLast,
-        overrideCorners = true
+        position = position,
     )
     Spacer(Modifier.height(4.dp))
 }

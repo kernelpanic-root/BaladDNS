@@ -48,8 +48,15 @@ import com.eyalm.adns.data.nextdns.recreation.RecreationItemCollection
 import com.eyalm.adns.data.nextdns.recreation.RecreationScheduleError
 import com.eyalm.adns.data.nextdns.recreation.RecreationScheduleValidation
 import com.eyalm.adns.data.nextdns.recreation.RecreationTimeDraft
-import com.eyalm.adns.ui.components.ExpressiveListItem
-import com.eyalm.adns.ui.components.dialogs.BaseDialog
+import com.eyalm.adns.ui.components.ExpandableResourceSettingRow
+import com.eyalm.adns.ui.components.ExpressiveCard
+import com.eyalm.adns.ui.components.ExpressiveCardHeader
+import com.eyalm.adns.ui.components.NavigationSettingRow
+import com.eyalm.adns.ui.components.ResourceSettingRow
+import com.eyalm.adns.ui.components.SegmentPosition
+import com.eyalm.adns.ui.components.ToggleSettingRow
+import com.eyalm.adns.ui.components.dialogs.FormDialog
+import com.eyalm.adns.ui.components.segmentPosition
 import com.eyalm.adns.viewmodel.nextdns.RecreationUiState
 import com.eyalm.adns.viewmodel.nextdns.RecreationViewModel
 import java.util.Locale
@@ -67,22 +74,20 @@ fun RecreationSection(
         viewModel.load(profileId, canEdit)
     }
 
-    ExpressiveListItem(
-        topPadding = 4.dp,
-        title = Locales.getString("parentalControl", "recreation", "name"),
-        description = Locales.getString("parentalControl", "recreation", "description"),
-        isFirst = true,
-        isLast = true,
-        trailingCenter = true,
-        interactiveItem = { _, _ ->
+    ExpressiveCard {
+        ExpressiveCardHeader(
+            title = Locales.getString("parentalControl", "recreation", "name"),
+            description = Locales.getString("parentalControl", "recreation", "description"),
+            trailing = {
             IconButton(onClick = viewModel::openEditor, enabled = canEdit) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = Locales.getString("global", "add"),
                 )
             }
-        },
-    ) {
+            },
+        )
+        Spacer(Modifier.height(12.dp))
         if (!state.initialLoadComplete) {
             Box(
                 modifier = Modifier
@@ -95,7 +100,6 @@ fun RecreationSection(
         } else {
             Column(
                 modifier = Modifier
-                    .padding(top = 12.dp)
                     .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -115,10 +119,10 @@ fun RecreationSection(
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         activeDays.forEachIndexed { index, day ->
                             state.schedule.times[day]?.let { window ->
-                                ExpressiveListItem(
+                                ResourceSettingRow(
                                     onClick = { if (canEdit) viewModel.openEditor() },
                                     title = recreationDayName(day),
-                                    interactiveItem = { _, _ ->
+                                    trailing = {
                                         Text(
                                             text = stringResource(
                                                 R.string.recreation_time_range,
@@ -130,10 +134,7 @@ fun RecreationSection(
                                             fontWeight = FontWeight.Medium,
                                         )
                                     },
-                                    isFirst = index == 0,
-                                    isLast = index == activeDays.lastIndex,
-                                    overrideCorners = true,
-                                    isSelected = true,
+                                    position = segmentPosition(index, activeDays.size),
                                 )
                             }
                         }
@@ -188,37 +189,41 @@ private fun RecreationItemGroup(
     var expanded by remember { mutableStateOf(false) }
     val enabledCount = items.count { it.recreation }
 
-    ExpressiveListItem(
+    NavigationSettingRow( // TODO replace this, should use "selected" color
         title = title,
         description = if (expanded) null else stringResource(R.string.recreation_time_active_count, enabledCount),
         onClick = { expanded = !expanded },
-        secondIcon = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-        isFirst = true,
-        isLast = !expanded,
-        overrideCorners = true,
-        isSelected = true
+        trailing = {
+            Icon(
+                if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = null,
+            )
+        },
+        position = if (expanded) SegmentPosition.First else SegmentPosition.Single,
     )
 
     AnimatedVisibility(visible = expanded) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             items.forEachIndexed { index, item ->
                 val pending = saving(collection, item.id)
-                ExpressiveListItem(
+                ToggleSettingRow( // TODO should be always with the "selected color"!
                     title = item.displayName(collection),
-                    isSelected = true,
-                    onClick = {
-                        if (canEdit && item.active && !pending) onToggle(collection, item)
-                    },
-                    interactiveItem = { _, _ ->
+                    checked = item.recreation,
+                    enabled = canEdit && item.active,
+                    saving = pending,
+                    toggle = { checked, onCheckedChange ->
                         Switch(
-                            checked = item.recreation,
-                            enabled = canEdit && item.active && !pending,
-                            onCheckedChange = { onToggle(collection, item) },
+                            checked = checked,
+                            enabled = canEdit && item.active,
+                            onCheckedChange = onCheckedChange,
                         )
                     },
-                    isFirst = false,
-                    isLast = index == items.lastIndex,
-                    overrideCorners = true
+                    onCheckedChange = { onToggle(collection, item) },
+                    position = if (index == items.lastIndex) {
+                        SegmentPosition.Last
+                    } else {
+                        SegmentPosition.Middle
+                    },
                 )
             }
         }
@@ -246,14 +251,13 @@ private fun RecreationScheduleDialog(
         }
     }
 
-    BaseDialog(
+    FormDialog(
         title = Locales.getString("parentalControl", "recreation", "set"),
         body = stringResource(R.string.configure_the_time_window_for_each_day),
         confirmLabel = Locales.getString("global", "save"),
-        destructive = false,
         submitting = state.savingSchedule,
         errorMessage = state.errorMessage,
-        modifier = Modifier.fillMaxWidth(0.8f),
+        modifier = Modifier.fillMaxWidth(0.83f),
         properties = DialogProperties(usePlatformDefaultWidth = false),
         onConfirm = onSave,
         onDismiss = onDismiss,
@@ -263,10 +267,9 @@ private fun RecreationScheduleDialog(
             val draft = state.draftTimes[day] ?: RecreationTimeDraft()
             val isError = day in state.scheduleErrors
             val isExpanded = expandedDay == day
-            val showTimeControls = isExpanded && draft.enabled
 
             Column {
-                ExpressiveListItem(
+                ExpandableResourceSettingRow(
                     title = recreationDayName(day),
                     description = if (!draft.enabled)
                         stringResource(R.string.recreation_time_disabled)
@@ -288,12 +291,12 @@ private fun RecreationScheduleDialog(
                             }
                         }
                     },
-                    isSelected = isExpanded,
-                    isFirst = day == RecreationScheduleValidation.days.first(),
-                    isLast = day == RecreationScheduleValidation.days.last(),
-                    overrideCorners = true,
-                    trailingCenter = true,
-                    interactiveItem = { _, _ ->
+                    expanded = isExpanded,
+                    position = segmentPosition(
+                        RecreationScheduleValidation.days.indexOf(day),
+                        RecreationScheduleValidation.days.size,
+                    ),
+                    trailing = {
                         Switch(
                             checked = draft.enabled,
                             enabled = !state.savingSchedule,
@@ -308,45 +311,42 @@ private fun RecreationScheduleDialog(
                             },
                         )
                     },
-                    altContent = {
-                        AnimatedVisibility(visible = showTimeControls) {
-                            Column(
-                                modifier = Modifier
-                                    .padding(vertical = 12.dp)
-                                    .fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
+                    content = {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(vertical = 12.dp)
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(24.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    TimeSelectionButton(
-                                        label = stringResource(R.string.recreation_time_start),
-                                        time = draft.start,
-                                        enabled = !state.savingSchedule,
-                                        onClick = { pickingTime = day to false }
-                                    )
-                                    Text(
-                                        "–",
-                                        style = MaterialTheme.typography.displaySmall,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                                    )
-                                    TimeSelectionButton(
-                                        label = stringResource(R.string.recreation_time_end),
-                                        time = draft.end,
-                                        enabled = !state.savingSchedule,
-                                        onClick = { pickingTime = day to true }
-                                    )
-                                }
+                                TimeSelectionButton(
+                                    label = stringResource(R.string.recreation_time_start),
+                                    time = draft.start,
+                                    enabled = !state.savingSchedule,
+                                    onClick = { pickingTime = day to false }
+                                )
+                                Text(
+                                    "–",
+                                    style = MaterialTheme.typography.displaySmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                TimeSelectionButton(
+                                    label = stringResource(R.string.recreation_time_end),
+                                    time = draft.end,
+                                    enabled = !state.savingSchedule,
+                                    onClick = { pickingTime = day to true }
+                                )
+                            }
 
-                                if (isError) {
-                                    Text(
-                                        text = recreationScheduleErrorText(state.scheduleErrors[day]),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.padding(top = 8.dp)
-                                    )
-                                }
+                            if (isError) {
+                                Text(
+                                    text = recreationScheduleErrorText(state.scheduleErrors[day]),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(top = 8.dp)
+                                )
                             }
                         }
                     }

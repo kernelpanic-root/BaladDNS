@@ -39,7 +39,8 @@ import com.eyalm.adns.R
 import com.eyalm.adns.data.Locales
 import com.eyalm.adns.data.nextdns.api.NextDnsProfile
 import com.eyalm.adns.domain.nextdns.ProfileCapabilities
-import com.eyalm.adns.ui.components.dialogs.BaseDialog
+import com.eyalm.adns.ui.components.dialogs.DestructiveConfirmationDialog
+import com.eyalm.adns.ui.components.dialogs.FormDialog
 import com.eyalm.adns.viewmodel.nextdns.ProfileAction
 import com.eyalm.adns.viewmodel.nextdns.ProfileActionDialog
 import com.eyalm.adns.viewmodel.nextdns.ProfileActionsEffect
@@ -155,11 +156,10 @@ fun LogsActionsSection(
     }
 
     if (state.dialog == ProfileActionDialog.ClearLogs) {
-        BaseDialog(
+        DestructiveConfirmationDialog(
             title = Locales.getString("settings", "logs", "clear", "button"),
             body = Locales.getString("settings", "logs", "clear", "confirm", "text"),
             confirmLabel = Locales.getString("settings", "logs", "clear", "confirm", "submit"),
-            destructive = true,
             submitting = state.inFlight == ProfileAction.ClearLogs,
             errorMessage = state.errorMessage,
             onConfirm = { viewModel.clearLogs(profile.id) },
@@ -304,7 +304,7 @@ fun ProfileActionsSection(
         ProfileActionDialog.DeleteOrLeave -> {
             val isDelete = capabilities.canDelete
             val section = if (isDelete) "delete" else "leave"
-            BaseDialog(
+            DestructiveConfirmationDialog(
                 title = Locales.getPlainString(
                     arrayOf("settings", section, "button"),
                     mapOf("name" to profile.name),
@@ -314,7 +314,6 @@ fun ProfileActionsSection(
                     mapOf("name" to profile.name),
                 ),
                 confirmLabel = Locales.getString("global", if (isDelete) "delete" else "leave"),
-                destructive = true,
                 submitting = state.inFlight == ProfileAction.DeleteOrLeave,
                 errorMessage = state.errorMessage,
                 onConfirm = { viewModel.deleteOrLeaveProfile(profile.id) },
@@ -340,10 +339,9 @@ private fun ProfileNameDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    BaseDialog(
+    FormDialog(
         title = title,
         confirmLabel = confirmLabel,
-        destructive = false,
         submitting = submitting,
         errorMessage = errorMessage,
         onConfirm = onConfirm,

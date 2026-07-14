@@ -43,7 +43,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 class DnsRepository(rawContext: Context) {
-    private val context: Context = com.eyalm.adns.data.LocaleHelper.onAttach(rawContext)
+    private val context: Context = com.eyalm.adns.data.localization.localizedContext(rawContext)
     private val resolver = context.contentResolver
     private val sharedPrefs = context.getSharedPreferences("adns_settings", Context.MODE_PRIVATE)
     private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())

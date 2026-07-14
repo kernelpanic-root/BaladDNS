@@ -12,25 +12,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -58,10 +49,15 @@ import com.eyalm.adns.data.nextdns.settings.SelectOption
 import com.eyalm.adns.data.nextdns.settings.SettingId
 import com.eyalm.adns.data.nextdns.settings.SettingsPageSpec
 import com.eyalm.adns.data.nextdns.settings.StringSelectSettingSpec
-import com.eyalm.adns.ui.components.ExpressiveListItem
-import com.eyalm.adns.ui.components.refresh.AdnsPullToRefresh
 import com.eyalm.adns.ui.components.ListIconView
-import com.eyalm.adns.ui.components.dialogs.BaseDialog
+import com.eyalm.adns.ui.components.NavigationSettingRow
+import com.eyalm.adns.ui.components.ResourceSettingRow
+import com.eyalm.adns.ui.components.SegmentPosition
+import com.eyalm.adns.ui.components.ToggleSettingRow
+import com.eyalm.adns.ui.components.dialogs.ConfirmationDialog
+import com.eyalm.adns.ui.components.dialogs.DestructiveConfirmationDialog
+import com.eyalm.adns.ui.components.dialogs.FormDialog
+import com.eyalm.adns.ui.components.segmentPosition
 import com.eyalm.adns.ui.theme.pageTitle
 import com.eyalm.adns.ui.theme.settingsLabel
 import com.eyalm.adns.viewmodel.ProfileSessionState
@@ -153,35 +149,44 @@ fun GenericCategoryScreen(
 
     scalarSettings.pendingConfirmation?.let { pending ->
         val confirmation = pending.spec.confirmation ?: return@let
-        BaseDialog(
-            title = Locales.getString(*confirmation.titlePath.toTypedArray()),
-            body = Locales.getString(*confirmation.bodyPath.toTypedArray()),
-            confirmLabel = Locales.getString("global", "change"),
-            destructive = confirmation.destructive,
-            onConfirm = scalarViewModel::confirmPendingChange,
-            onDismiss = scalarViewModel::cancelPendingChange
-        )
+        val title = Locales.getString(*confirmation.titlePath.toTypedArray())
+        val body = Locales.getString(*confirmation.bodyPath.toTypedArray())
+        val confirmLabel = Locales.getString("global", "change")
+        if (confirmation.destructive) {
+            DestructiveConfirmationDialog(
+                title = title,
+                body = body,
+                confirmLabel = confirmLabel,
+                onConfirm = scalarViewModel::confirmPendingChange,
+                onDismiss = scalarViewModel::cancelPendingChange,
+            )
+        } else {
+            ConfirmationDialog(
+                title = title,
+                body = body,
+                confirmLabel = confirmLabel,
+                onConfirm = scalarViewModel::confirmPendingChange,
+                onDismiss = scalarViewModel::cancelPendingChange,
+            )
+        }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            Locales.getString("global", "back"),
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                ),
-            )
+    SettingsScreenLayout(
+        title = title,
+        onBack = onBack,
+        showAppBarTitle = false,
+        refreshing = scalarSettings.refreshing,
+        onRefresh = {
+            profileState.selected?.let { profile ->
+                scalarViewModel.load(
+                    profileId = profile.id,
+                    pageSpec = settingsPage,
+                    editable = profileState.capabilities.canEditSettings,
+                    force = true,
+                )
+            }
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        snackbarHostState = snackbarHostState,
     ) { innerPadding ->
         val isLoading =
             profileState.loading ||
@@ -199,26 +204,13 @@ fun GenericCategoryScreen(
                 CircularWavyProgressIndicator(modifier = Modifier.size(64.dp))
             }
         } else {
-            AdnsPullToRefresh(
-                refreshing = scalarSettings.refreshing,
-                onRefresh = {
-                    profileState.selected?.let { profile ->
-                        scalarViewModel.load(
-                            profileId = profile.id,
-                            pageSpec = settingsPage,
-                            editable = profileState.capabilities.canEditSettings,
-                            force = true,
-                        )
-                    }
-                },
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding),
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                LazyColumn(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
-                ) {
                 item {
                     Text(
                         text = title,
@@ -241,13 +233,17 @@ fun GenericCategoryScreen(
                                 modifier = Modifier.padding(start = 8.dp, bottom = 8.dp),
                             )
                             lists.forEachIndexed { index, listSetting ->
-                                ExpressiveListItem(
+                                NavigationSettingRow(
                                     title = listSetting.title(context),
                                     description = listSetting.description(context),
                                     onClick = { navigationViewModel.openListScreen(listSetting) },
-                                    secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                    isFirst = index == 0,
-                                    isLast = index == lists.lastIndex,
+                                    trailing = {
+                                        Icon(
+                                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                            contentDescription = null,
+                                        )
+                                    },
+                                    position = segmentPosition(index, lists.size),
                                 )
                             }
                         }
@@ -325,7 +321,6 @@ fun GenericCategoryScreen(
                     Spacer(Modifier.height(12.dp))
                 }
 
-                }
             }
         }
     }
@@ -359,8 +354,10 @@ private fun ScalarSettingsGroup(
                 rawValue = values[spec.id],
                 saving = spec.id in saving,
                 editable = editable,
-                isFirst = index == 0,
-                isLast = if (footer != null) false else index == settings.lastIndex,
+                position = segmentPosition(
+                    index,
+                    settings.size + if (footer == null) 0 else 1,
+                ),
                 onBooleanChange = onBooleanChange,
                 onIntSelect = onIntSelect,
                 onStringSelect = onStringSelect,
@@ -384,8 +381,7 @@ private fun ScalarSettingRow(
     rawValue: JsonElement?,
     saving: Boolean,
     editable: Boolean,
-    isFirst: Boolean,
-    isLast: Boolean,
+    position: SegmentPosition,
     onBooleanChange: (BooleanSettingSpec, Boolean) -> Unit,
     onIntSelect: (IntSelectSettingSpec) -> Unit,
     onStringSelect: (StringSelectSettingSpec) -> Unit,
@@ -393,52 +389,53 @@ private fun ScalarSettingRow(
     when (spec) {
         is BooleanSettingSpec -> {
             val checked = rawValue?.let(spec::decode) ?: return
-            ExpressiveListItem(
+            ToggleSettingRow(
                 title = spec.locale.title(LocalContext.current),
                 description = spec.locale.description(LocalContext.current),
-                isSelected = checked,
-                onClick = {
-                    if (editable && !saving) onBooleanChange(spec, !checked)
-                },
-                interactiveItem = { _, _ ->
+                checked = checked,
+                enabled = editable,
+                saving = saving,
+                toggle = { value, onChange ->
                     Switch(
-                        checked = checked,
+                        checked = value,
                         enabled = editable,
-                        onCheckedChange = { newValue ->
-                            if (editable && !saving) onBooleanChange(spec, newValue)
-                        },
+                        onCheckedChange = onChange,
                     )
                 },
-                isFirst = isFirst,
-                isLast = isLast,
+                onCheckedChange = { onBooleanChange(spec, it) },
+                position = position,
             )
         }
 
         is IntSelectSettingSpec -> {
             val value = rawValue?.let(spec::decode) ?: return
-            ExpressiveListItem(
+            NavigationSettingRow(
                 title = spec.locale.title(LocalContext.current),
                 description = spec.options.firstOrNull { it.value == value }
                     ?.label(LocalContext.current)
                     ?: value.toString(),
                 onClick = { if (editable && !saving) onIntSelect(spec) },
-                secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                isFirst = isFirst,
-                isLast = isLast,
+                trailing = {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                },
+                enabled = editable && !saving,
+                position = position,
             )
         }
 
         is StringSelectSettingSpec -> {
             val value = rawValue?.let(spec::decode) ?: return
-            ExpressiveListItem(
+            NavigationSettingRow(
                 title = spec.locale.title(LocalContext.current),
                 description = spec.options.firstOrNull { it.value == value }
                     ?.label(LocalContext.current)
                     ?: value,
                 onClick = { if (editable && !saving) onStringSelect(spec) },
-                secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                isFirst = isFirst,
-                isLast = isLast,
+                trailing = {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                },
+                enabled = editable && !saving,
+                position = position,
             )
         }
     }
@@ -454,49 +451,37 @@ private fun <T : Any> SettingSelectionDialog(
 ) {
     val context = LocalContext.current
     var selected by remember(current) { mutableStateOf(current) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
+    FormDialog(
+        title = title,
+        confirmLabel = Locales.getString("global", "save"),
+        confirmEnabled = selected != null,
+        onConfirm = { selected?.value?.let(onSelect) },
+        onDismiss = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier.fillMaxWidth(0.8f),
-        containerColor = MaterialTheme.colorScheme.background,
-        title = { Text(title) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                options.forEach { option ->
-                    ExpressiveListItem(
-                        title = option.label(context),
-                        description = option.descriptionPath?.let { Locales.getString(*it.toTypedArray()) },
-                        onClick = { selected = option },
-                        isSelected = selected == option,
-                        altLeadingContent = option.iconKey
-                            ?.let(::locationFlagIcon)
-                            ?.let { icon -> { _ -> ListIconView(icon) } },
-                        interactiveItem = { isSelected, _ ->
-                            RadioButton(
-                                selected = isSelected,
-                                onClick = { selected = option }
-                            )
-                        },
-                        isFirst = option == options.first(),
-                        isLast = option == options.last(),
-                    )
-                }
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(Locales.getString("global", "cancel"))
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { selected?.value?.let(onSelect) },
-                enabled = selected != null
-            ) {
-                Text(Locales.getString("global", "save"))
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            options.forEachIndexed { index, option ->
+                ResourceSettingRow(
+                    title = option.label(context),
+                    description = option.descriptionPath?.let { Locales.getString(*it.toTypedArray()) },
+                    onClick = { selected = option },
+                    selected = selected == option,
+                    leading = option.iconKey
+                        ?.let(::locationFlagIcon)
+                        ?.let { icon -> { ListIconView(icon, modifier = Modifier.size(24.dp)) } }, // TODO icon size wont change!
+                    trailing = {
+                        RadioButton(
+                            selected = selected == option,
+                            onClick = { selected = option }
+                        )
+                    },
+                    position = segmentPosition(index, options.size),
+                    alignment = Alignment.CenterVertically
+                )
             }
         }
-    )
+    }
 }
 
 private fun LocaleBinding.title(context: Context): String =

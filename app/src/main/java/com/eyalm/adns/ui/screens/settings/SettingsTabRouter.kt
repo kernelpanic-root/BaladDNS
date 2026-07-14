@@ -292,6 +292,10 @@ fun SettingsTabRouter(
                 BackHandler { viewModel.setPage(SettingsViewModel.Page.MAIN) }
                 LanguageScreen(onBack = { viewModel.setPage(SettingsViewModel.Page.MAIN) })
             }
+            SettingsViewModel.Page.APPEARANCE -> {
+                BackHandler { viewModel.setPage(SettingsViewModel.Page.MAIN) }
+                AppearanceScreen(onBack = { viewModel.setPage(SettingsViewModel.Page.MAIN) })
+            }
         }
     }
 }
