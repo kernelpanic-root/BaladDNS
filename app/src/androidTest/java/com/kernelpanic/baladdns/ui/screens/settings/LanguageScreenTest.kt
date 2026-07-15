@@ -20,7 +20,7 @@ class LanguageScreenTest {
         }
 
         composeRule
-            .onNodeWithText("Help translate ADNS")
+            .onNodeWithText("Help translate BaladDNS")
             .assertIsDisplayed()
     }
 }

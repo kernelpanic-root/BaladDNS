@@ -288,7 +288,7 @@ class NextDnsProfileRepository(
     )
 }
 
-const val DEFAULT_NEXTDNS_DEVICE_NAME = "ADNS"
+const val DEFAULT_NEXTDNS_DEVICE_NAME = "BaladDNS"
 
 fun nextDnsProfileHostname(
     profileId: String,

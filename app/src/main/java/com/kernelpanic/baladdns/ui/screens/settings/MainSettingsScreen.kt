@@ -264,7 +264,7 @@ fun MainSettingsScreen(
                         .fillMaxWidth()
                         .padding(top = 8.dp),
                     onClick = {
-                        val url = "https://github.com/eyalm2000/adns"
+                        val url = "https://github.com/kernelpanic-root/BaladDNS"
                         val intent = Intent(Intent.ACTION_VIEW, url.toUri())
                         try {
                             context.startActivity(intent)

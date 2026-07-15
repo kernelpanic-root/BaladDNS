@@ -77,7 +77,7 @@ class WifiRuleEngineTest {
     }
 
     @Test
-    fun `leaving restores only while current state is still ADNS applied state`() {
+    fun `leaving restores only while current state is still BaladDNS applied state`() {
         val active = activeSuspension()
         val restore = evaluate(
             identity = ConnectedWifiIdentity.NotOnWifi,

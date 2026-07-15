@@ -153,7 +153,7 @@ fun UpdateDialog(
         ),
         confirmLabel = stringResource(R.string.download),
         onConfirm = {
-            val url = "https://github.com/eyalm2000/adns/releases"
+            val url = "https://github.com/kernelpanic-root/BaladDNS/releases"
             val intent = Intent(Intent.ACTION_VIEW, url.toUri())
             try {
                 context.startActivity(intent)

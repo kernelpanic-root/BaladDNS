@@ -319,7 +319,7 @@ object SetupGuideCatalogFactory {
             ),
             SetupGuideBlock.ExternalLink(
                 GuideRichText(context.getString(R.string.download_adns)),
-                "https://github.com/eyalm2000/adns"
+                "https://github.com/kernelpanic-root/BaladDNS"
             )
         ),
 

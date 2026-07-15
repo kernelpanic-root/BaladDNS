@@ -87,7 +87,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                 val client = OkHttpClient()
                 val request = Request.Builder()
-                    .url("https://api.github.com/repos/eyalm2000/adns/releases")
+                    .url("https://api.github.com/repos/kernelpanic-root/BaladDNS/releases")
                     .build()
 
                 val response = client.newCall(request).execute()

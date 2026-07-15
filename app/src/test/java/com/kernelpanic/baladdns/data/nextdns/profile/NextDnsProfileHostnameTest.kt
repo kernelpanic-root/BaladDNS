@@ -6,9 +6,9 @@ import org.junit.Test
 
 class NextDnsProfileHostnameTest {
     @Test
-    fun `profile hostname uses ADNS as the default device name`() {
+    fun `profile hostname uses BaladDNS as the default device name`() {
         assertEquals(
-            "ADNS-29a59d.dns.nextdns.io",
+            "BaladDNS-29a59d.dns.nextdns.io",
             nextDnsProfileHostname("29a59d"),
         )
     }
