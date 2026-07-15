@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.eyalm.adns"
+    namespace = "com.kernelpanic.baladdns"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -42,7 +42,7 @@ android {
     }
     
     defaultConfig {
-        applicationId = "com.eyalm.adns"
+        applicationId = "com.kernelpanic.baladdns"
         minSdk = 27
         targetSdk = 36
         versionCode = 10

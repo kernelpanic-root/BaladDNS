@@ -369,5 +369,5 @@
     <string name="color_scheme_adns">ADNS colors</string>
     <string name="color_scheme_system">System colors</string>
     <string name="save">Save</string>
-    <string name="adb_grant_command" translatable="false">adb shell pm grant com.eyalm.adns android.permission.WRITE_SECURE_SETTINGS</string>
+    <string name="adb_grant_command" translatable="false">adb shell pm grant com.kernelpanic.baladdns android.permission.WRITE_SECURE_SETTINGS</string>
 </resources>
